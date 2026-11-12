@@ -46,6 +46,38 @@
 
     .is-flying .flight-sky { display: block; }
 
+    .boost-streaks {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .24s ease;
+    }
+
+    .boost-streaks::before, .boost-streaks::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 12%;
+      width: .24cqw;
+      height: 5cqw;
+      border-radius: 100%;
+      background: #fff9;
+      box-shadow: 11cqw 18cqw #fff7, 19cqw 39cqw #fff6,
+        55cqw 14cqw #fff8, 64cqw 33cqw #fff7, 78cqw 8cqw #fff9;
+    }
+
+    .boost-streaks::after { left: 7%; height: 3cqw; }
+    .is-boosting .boost-streaks { opacity: 1; }
+    .is-boosting .boost-streaks::before { animation: boost-stream 1.2s linear infinite; }
+    .is-boosting .boost-streaks::after { animation: boost-stream 1.55s -.7s linear infinite; }
+
+    @keyframes boost-stream {
+      from { transform: translateY(-46cqw); }
+      to { transform: translateY(58cqw); }
+    }
+
     .solo-sky {
       position: absolute;
       z-index: -1;
@@ -127,6 +159,75 @@
       top: calc(50% + var(--fall-progress, 0) * 34%);
       width: 30%;
       translate: -50% -50%;
+      transition: transform .3s ease-out;
+    }
+
+    .is-falling .flight-bird { transform: rotate(-7deg) scale(.96, .93); }
+
+    .bird-sweat, .bird-sparkle, .rainbow-trail { display: none; pointer-events: none; }
+    .is-falling .bird-sweat, .is-boosting .bird-sparkle, .is-boosting .rainbow-trail { display: block; }
+
+    .bird-sweat {
+      position: absolute;
+      top: 23%;
+      left: 29%;
+      width: 3.6%;
+      aspect-ratio: 1;
+      border: .1cqw solid #fff9;
+      border-radius: 75% 0 75% 75%;
+      background: radial-gradient(circle at 32% 65%, white, #a9f4ff 25%, #3cbce9 70%);
+      transform: rotate(-24deg);
+    }
+
+    .bird-sweat + .bird-sweat { top: 32%; left: 68%; width: 3%; }
+    .is-falling .bird-sweat { animation: sweat-drop 1.2s ease-in infinite; }
+    .is-falling .bird-sweat + .bird-sweat { animation-delay: -.55s; }
+
+    @keyframes sweat-drop {
+      0% { opacity: 0; transform: rotate(-24deg) scale(.65); }
+      25%, 60% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(2cqw) rotate(-24deg); }
+    }
+
+    .bird-sparkle {
+      position: absolute;
+      top: 36.7%;
+      left: 42.4%;
+      width: 4.6%;
+      aspect-ratio: 1;
+      translate: -50% -50%;
+      background: radial-gradient(circle, #fff 22%, #fff48d 62%, #ffbe52);
+      clip-path: polygon(50% 0, 64% 36%, 100% 50%, 64% 64%, 50% 100%, 36% 64%, 0 50%, 36% 36%);
+    }
+
+    .bird-sparkle + .bird-sparkle { left: 58.9%; }
+    .is-boosting .bird-sparkle { animation: sparkle 1.45s ease-in-out infinite; }
+    .is-boosting .bird-sparkle + .bird-sparkle { animation-delay: -.34s; }
+
+    @keyframes sparkle {
+      0%, 100% { transform: scale(.75) rotate(-12deg); opacity: .7; }
+      50% { transform: scale(1.2) rotate(12deg); opacity: 1; }
+    }
+
+    .rainbow-trail {
+      position: absolute;
+      top: 82%;
+      left: 50%;
+      width: 40%;
+      height: 100%;
+      translate: -50% 0;
+      transform-origin: top;
+      border-radius: 40% 40% 55% 55%;
+      background: linear-gradient(90deg, #ff626a, #ffc258, #fff47c, #77efac, #60d7ff, #bd8fff);
+      mask-image: linear-gradient(#000, #0009 42%, transparent 94%);
+      filter: blur(.34cqw);
+    }
+
+    .is-boosting .rainbow-trail { animation: rainbow-surge .85s ease-in-out infinite alternate; }
+
+    @keyframes rainbow-surge {
+      from { transform: scale(.88, .82); }
+      to { transform: scale(1.08, 1.18); }
     }
 
     .is-soaring .flight-bird {
@@ -198,6 +299,10 @@
       font-size: 1.65cqw;
       font-weight: 800;
     }
+
+    .is-flying .boost-message { display: none; color: #70420e; background: #fff5c9f0; }
+    .is-boosting .flight-status:not(.boost-message) { display: none; }
+    .is-boosting .boost-message { display: block; }
 
     .is-soaring .flight-status, .is-soaring .flight-height,
     .is-soaring .sound-button { display: none; }
@@ -513,8 +618,10 @@
 
     @media (prefers-reduced-motion: reduce) {
       .perch, .chick, .is-soaring .flight-bird, .is-soaring .flight-wing { animation: none; }
+      .is-falling .bird-sweat, .is-boosting .bird-sparkle, .is-boosting .rainbow-trail { animation: none; }
+      .is-boosting .boost-streaks { display: none; }
       .flight-wing, .solo-sky, .is-soaring .flight-bird, .arrival-message,
-      .chick, .feet-shadow, .idle-dialogue, .perch .flight-bird,
+      .chick, .feet-shadow, .idle-dialogue, .flight-bird,
       .guide, .guide strong, .pose-instructions, .camera { transition-duration: 0s; transition-delay: 0s; }
     }
   </style>
@@ -523,16 +630,23 @@
   <main class="scene" aria-labelledby="title">
     <div class="flight-sky" aria-hidden="true"></div>
     <video class="solo-sky" src="image/sky.mp4" muted loop playsinline preload="auto" aria-hidden="true"></video>
+    <div class="boost-streaks" aria-hidden="true"></div>
     <div class="perch">
       <span class="feet-shadow" aria-hidden="true"></span>
       <img class="chick" src="assets/idle-chick.png" alt="나뭇가지 위에 앉아 하늘을 바라보는 아기새">
       <div class="flight-bird">
+        <span class="rainbow-trail" aria-hidden="true"></span>
         <img class="flight-wing flight-wing-left" src="assets/chick-flight-front.png" alt="">
         <img class="flight-wing flight-wing-right" src="assets/chick-flight-front.png" alt="">
         <img class="flight-body" src="assets/chick-flight-front.png" alt="정면을 보고 날개를 움직이는 아기새">
+        <span class="bird-sweat" aria-hidden="true"></span>
+        <span class="bird-sweat" aria-hidden="true"></span>
+        <span class="bird-sparkle" aria-hidden="true"></span>
+        <span class="bird-sparkle" aria-hidden="true"></span>
       </div>
     </div>
     <p class="flight-status" role="status"></p>
+    <p class="flight-status boost-message" role="status">조금만 더 힘을 내!</p>
     <p class="arrival-message" role="status"></p>
     <div class="return-overlay" role="status" hidden>
       <p>3초 뒤 대기화면으로 전환됩니다</p>
@@ -603,6 +717,7 @@
     const guideFadeDuration = 650;
     const keyboardLift = 7.5;
     const floorHeight = -24;
+    const boostHeight = 80;
     const soloFlightDuration = 5000;
     const returnDuration = 3000;
     const mediaPipeUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21';
@@ -849,7 +964,7 @@
       scene.style.removeProperty('--fall-progress');
       flightBird.style.removeProperty('--left-arm-angle');
       flightBird.style.removeProperty('--right-arm-angle');
-      scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-sky-playing');
+      scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-sky-playing', 'is-falling', 'is-boosting');
       perch.append(flightBird);
     }
 
@@ -879,6 +994,9 @@
       const descent = now - lastFlapAt >= 1100 ? (4.5 + 10 * fallProgress) * seconds : 0;
       const height = Math.max(floorHeight, flightHeight + lift - descent);
       const nextHeight = height >= 100 - .000001 ? 100 : height;
+      const isFalling = nextHeight < flightHeight;
+      scene.classList.toggle('is-falling', isFalling);
+      scene.classList.toggle('is-boosting', !isFalling && nextHeight >= boostHeight && nextHeight < 100);
 
       if (nextHeight !== flightHeight) {
         const gaugeHeight = Math.max(0, nextHeight);
@@ -887,7 +1005,10 @@
           heightValue.textContent = `${Math.floor(gaugeHeight)}%`;
         }
         flightHeight = nextHeight;
-        scene.style.setProperty('--flight-progress', gaugeHeight / 100);
+        // Keep more of the background travel for the final stretch.
+        const skyProgress = gaugeHeight < boostHeight ? .55 * gaugeHeight / boostHeight :
+          .55 + .45 * (gaugeHeight - boostHeight) / (100 - boostHeight);
+        scene.style.setProperty('--flight-progress', skyProgress);
         scene.style.setProperty('--fall-progress', Math.max(0, flightHeight / floorHeight));
       }
 
