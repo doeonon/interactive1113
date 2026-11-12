@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>아기새의 첫 비행 · 웹캠 확인</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Malgun Gothic", sans-serif;
+      background: #142429;
+      color: #f4f5ee;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    main {
+      width: min(56rem, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: clamp(1.5rem, 5vh, 4rem) 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 5vw, 3rem);
+    }
+
+    p {
+      color: #c7dad8;
+      line-height: 1.6;
+    }
+
+    .preview {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #0c171b;
+      border: 1px solid #526a70;
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: scaleX(-1);
+    }
+
+    button {
+      padding: 0.7rem 1.2rem;
+      border: 0;
+      border-radius: 0.5rem;
+      background: #d7f2b2;
+      color: #142429;
+      font: inherit;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    button:focus-visible {
+      outline: 2px solid white;
+      outline-offset: 4px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>아기새의 첫 비행</h1>
+    <p>웹캠을 켜고 양팔을 펼쳐 보세요. 어깨와 양손이 화면 안에 들어오면 됩니다.</p>
+    <div class="preview">
+      <video id="preview" aria-label="웹캠 미리보기" muted playsinline hidden></video>
+    </div>
+    <p id="status" role="status">웹캠을 켜려면 아래 버튼을 눌러주세요.</p>
+    <button id="camera" type="button">웹캠 켜기</button>
+  </main>
+  <script>
+    const preview = document.querySelector('#preview');
+    const status = document.querySelector('#status');
+    const camera = document.querySelector('#camera');
+
+    function stopCamera() {
+      preview.srcObject?.getTracks().forEach(track => track.stop());
+      preview.srcObject = null;
+      preview.hidden = true;
+      camera.textContent = '웹캠 켜기';
+    }
+
+    camera.addEventListener('click', async () => {
+      if (preview.srcObject) {
+        stopCamera();
+        status.textContent = '웹캠이 꺼졌어요.';
+        return;
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        status.textContent = '이 브라우저에서 웹캠을 열 수 없어요. 파일을 Chrome이나 Edge에서 열어보세요.';
+        return;
+      }
+
+      camera.disabled = true;
+      status.textContent = '웹캠을 여는 중이에요. 권한 안내가 뜨면 허용을 눌러주세요.';
+
+      try {
+        preview.srcObject = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        preview.hidden = false;
+        await preview.play();
+        camera.textContent = '웹캠 끄기';
+        status.textContent = '웹캠이 켜졌어요.';
+      } catch (error) {
+        stopCamera();
+        const messages = {
+          NotAllowedError: '웹캠 권한이 필요해요. 브라우저의 카메라 권한을 허용하고 다시 눌러주세요.',
+          NotFoundError: '웹캠을 찾을 수 없어요. 연결을 확인하고 다시 눌러주세요.',
+          NotReadableError: '웹캠을 열 수 없어요. 카메라를 사용 중인 다른 앱을 닫고 다시 눌러주세요.'
+        };
+        status.textContent = messages[error.name] ?? '웹캠을 열 수 없어요. 연결 상태를 확인하고 다시 눌러주세요.';
+      } finally {
+        camera.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
