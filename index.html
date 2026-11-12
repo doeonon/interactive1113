@@ -729,6 +729,8 @@
     let poseLandmarkerPromise;
     let poseFrame;
     let audioContext;
+    let windNoise;
+    let flightWind;
     let raisedStroke = null;
     let lastFlapAt = -Infinity;
     let lastFlightFrame = 0;
@@ -745,10 +747,13 @@
     let keyboardFlight = false;
 
     async function enableSound() {
+      if (!AudioEngine) return;
+
       try {
         audioContext ??= new AudioEngine();
         await audioContext.resume();
         soundButton.hidden = audioContext.state === 'running';
+        if (experienceStarted) updateFlightWind(flightHeight === 100 ? .4 : 0);
       } catch (error) {
         console.warn('소리를 켤 수 없어요.', error);
       }
@@ -779,6 +784,68 @@
       } catch (error) {
         console.warn('시작음을 재생할 수 없어요.', error);
       }
+    }
+
+    function createNoiseSource() {
+      if (!windNoise) {
+        const length = audioContext.sampleRate * 4;
+        windNoise = audioContext.createBuffer(1, length, audioContext.sampleRate);
+        const samples = windNoise.getChannelData(0);
+        for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
+      }
+      const source = audioContext.createBufferSource();
+      source.buffer = windNoise;
+      return source;
+    }
+
+    function updateFlightWind(intensity) {
+      if (audioContext?.state !== 'running' || flightWind?.intensity === intensity) return;
+
+      const at = audioContext.currentTime;
+      if (!flightWind) {
+        const source = createNoiseSource();
+        const filter = audioContext.createBiquadFilter();
+        const volume = audioContext.createGain();
+        source.loop = true;
+        filter.type = 'bandpass';
+        filter.Q.value = .7;
+        filter.frequency.value = 420;
+        volume.gain.value = 0;
+        source.connect(filter).connect(volume).connect(audioContext.destination);
+        source.start(at);
+        flightWind = { source, filter, volume, intensity };
+      }
+
+      flightWind.intensity = intensity;
+      flightWind.filter.frequency.setTargetAtTime(420 + intensity * 630, at, .24);
+      flightWind.volume.gain.setTargetAtTime(.12 + intensity * .24, at, .24);
+    }
+
+    function stopFlightWind() {
+      if (!flightWind) return;
+      const at = audioContext.currentTime;
+      flightWind.volume.gain.setTargetAtTime(0, at, .05);
+      flightWind.source.stop(at + .25);
+      flightWind = undefined;
+    }
+
+    function playWingWhoosh(strength) {
+      if (audioContext?.state !== 'running') return;
+
+      const at = audioContext.currentTime;
+      const source = createNoiseSource();
+      const filter = audioContext.createBiquadFilter();
+      const volume = audioContext.createGain();
+      filter.type = 'bandpass';
+      filter.Q.value = .8;
+      filter.frequency.setValueAtTime(500, at);
+      filter.frequency.exponentialRampToValueAtTime(1750, at + .075);
+      filter.frequency.exponentialRampToValueAtTime(380, at + .24);
+      volume.gain.setValueAtTime(.001, at);
+      volume.gain.linearRampToValueAtTime(.45 * strength, at + .075);
+      volume.gain.exponentialRampToValueAtTime(.001, at + .24);
+      source.connect(filter).connect(volume).connect(audioContext.destination);
+      source.start(at, Math.random() * (windNoise.duration - .25), .25);
     }
 
     function setPoseStatus(message) {
@@ -843,6 +910,7 @@
     function addLift(lift, now) {
       pendingLift = Math.min(100 - flightHeight, pendingLift + lift);
       lastFlapAt = now;
+      playWingWhoosh(lift / 9);
     }
 
     function flapWithKeyboard() {
@@ -902,6 +970,7 @@
     async function startSoloFlight() {
       arrivalMessage.textContent = '해냈어! 드디어 하늘을 날 수 있어!';
       scene.classList.add('is-soaring');
+      updateFlightWind(.4);
       soloTimer = setTimeout(() => startReturn('complete', performance.now()), soloFlightDuration);
 
       try {
@@ -941,6 +1010,7 @@
       clearTimeout(flightIntroTimer);
       cancelAnimationFrame(flightFrame);
       cancelAnimationFrame(countdownFrame);
+      stopFlightWind();
       keyboardWingAnimations.forEach(animation => animation.cancel());
       keyboardWingAnimations = [];
       soloSky.pause();
@@ -995,8 +1065,12 @@
       const height = Math.max(floorHeight, flightHeight + lift - descent);
       const nextHeight = height >= 100 - .000001 ? 100 : height;
       const isFalling = nextHeight < flightHeight;
+      const isBoosting = !isFalling && nextHeight >= boostHeight && nextHeight < 100;
       scene.classList.toggle('is-falling', isFalling);
-      scene.classList.toggle('is-boosting', !isFalling && nextHeight >= boostHeight && nextHeight < 100);
+      scene.classList.toggle('is-boosting', isBoosting);
+      const ascent = seconds > 0 ? Math.max(0, (nextHeight - flightHeight) / (17 * seconds)) : 0;
+      const windIntensity = Math.round(Math.min(1, ascent * (isBoosting ? 1 : .6)) * 20) / 20;
+      updateFlightWind(windIntensity);
 
       if (nextHeight !== flightHeight) {
         const gaugeHeight = Math.max(0, nextHeight);
@@ -1044,6 +1118,7 @@
       setPoseStatus('');
       flightStatus.textContent = '체험 시작!';
       playStartChime();
+      updateFlightWind(0);
       lastFlapAt = now;
       lastFlightFrame = now;
       flightFrame = requestAnimationFrame(animateFlight);
@@ -1107,6 +1182,7 @@
 
       event.preventDefault();
       if (event.repeat || flightHeight === 100 || returnReason === 'complete') return;
+      if (audioContext?.state !== 'running') enableSound();
 
       keyboardFlight = true;
       if (returnReason === 'away') clearReturn();
@@ -1226,6 +1302,9 @@
     retry.addEventListener('click', startCamera);
     soundButton.hidden = !AudioEngine;
     soundButton.addEventListener('click', enableSound);
+    flightWings[0].addEventListener('animationiteration', event => {
+      if (event.animationName === 'soar-wing') playWingWhoosh(.55);
+    });
     document.addEventListener('keydown', handleFlightKey);
     setInterval(monitorVisitor, 100);
     startCamera();
