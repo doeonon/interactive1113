@@ -221,34 +221,26 @@
 
     .is-falling .flight-bird { transform: rotate(-7deg) scale(.96, .93); }
     .is-falling.is-slumped .flight-bird { transform: translateY(1.6cqw) rotate(-5deg) scale(.92, .76); }
-    .is-slumped .flight-wing-left { rotate: -56deg; }
-    .is-slumped .flight-wing-right { rotate: 56deg; }
     .is-climbing .flight-bird { transform: translateY(-.55cqw) scale(1.025); }
     .is-flight-waiting .flight-bird { animation: waiting-sway 2s ease-in-out infinite; }
-    .is-flight-waiting .flight-wing { animation: waiting-flap .85s ease-in-out infinite; }
+    .is-flight-waiting .flight-sprite { animation: flap .85s ease-in-out infinite; }
     @keyframes waiting-sway {
       0%, 100% { rotate: -2.5deg; }
       50% { rotate: 2.5deg; }
-    }
-    @keyframes waiting-flap {
-      0%, 100% { rotate: calc(var(--downstroke-rotation) * .6); }
-      50% { rotate: var(--glide-rotation); }
     }
     .is-dozing .flight-bird {
       transform: translateY(.65cqw) rotate(9deg) scale(.96);
       animation: doze-breath 1.15s ease-in-out infinite;
     }
     .is-waking .flight-bird { transform: translateY(-.75cqw) rotate(-5deg) scale(1.04); }
-    .is-demonstrating .flight-wing { animation: demo-flap .72s ease-in-out 2; }
+    .is-demonstrating .flight-sprite { animation: flap .72s ease-in-out 2; }
 
     @keyframes doze-breath {
       50% { scale: 1 .96; }
     }
 
-    @keyframes demo-flap {
-      0%, 100% { rotate: var(--wing-rotation); }
-      34% { rotate: calc(var(--glide-rotation) * 5); }
-      68% { rotate: calc(var(--downstroke-rotation) * 2.7); }
+    @keyframes flap {
+      50% { scale: 1.04 .93; }
     }
 
     .rest-message {
@@ -411,36 +403,14 @@
       animation: waiting-sway 3s ease-in-out infinite;
     }
 
-    .flight-bird img {
+    .flight-sprite {
+      --bird-tilt: clamp(-8deg, (var(--left-arm-angle, 0deg) - var(--right-arm-angle, 0deg)) * .12, 8deg);
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-    }
-
-    /* Each wing uses the same image and pivots behind the body. */
-    .flight-body {
-      clip-path: inset(0 33% 0 33%);
-    }
-
-    .flight-wing { transition: rotate 80ms ease-out; }
-
-    .flight-wing-left {
-      --wing-rotation: calc(var(--left-arm-angle, 0deg) * .4);
-      --glide-rotation: 8deg;
-      --downstroke-rotation: -18deg;
-      rotate: var(--wing-rotation);
-      transform-origin: 34% 59%;
-      clip-path: inset(0 64% 0 0);
-    }
-
-    .flight-wing-right {
-      --wing-rotation: calc(var(--right-arm-angle, 0deg) * -.4);
-      --glide-rotation: -8deg;
-      --downstroke-rotation: 18deg;
-      rotate: var(--wing-rotation);
-      transform-origin: 66% 59%;
-      clip-path: inset(0 0 0 64%);
+      rotate: var(--bird-tilt);
+      transition: rotate 120ms ease-out;
     }
 
     .flight-status {
@@ -531,7 +501,7 @@
         rotate(var(--wind-tilt, 0deg)) scale(var(--wind-scale, 1.025));
       transition: transform .13s ease-out;
     }
-    .is-wind-challenge .flight-wing { transition-duration: .32s; }
+    .is-wind-challenge .flight-sprite { transition-duration: .32s; }
     .wind-bird-guide {
       position: absolute;
       top: 50%;
@@ -555,15 +525,7 @@
     }
     .is-wind-challenge .wind-bird-guide { opacity: .58; }
     .is-wind-balanced .wind-bird-guide { color: #aff6bc; }
-    .is-wind-gliding .flight-wing, .is-soaring .flight-wing { rotate: 0deg; }
-    .is-boosting .flight-wing {
-      rotate: calc(var(--downstroke-rotation) * 1.8);
-      transition-duration: .3s;
-    }
-    .is-boost-gliding .flight-wing {
-      rotate: calc(var(--wing-rotation) * (1 - var(--boost-fade, 0)) +
-        var(--downstroke-rotation) * 1.8 * var(--boost-fade, 0));
-    }
+    .is-wind-gliding .flight-sprite, .is-soaring .flight-sprite { rotate: 0deg; }
     .is-boosting .flight-bird, .is-boost-gliding .flight-bird {
       transform: translateY(calc(-3cqw * var(--boost-fade, 1))) scale(1.02);
     }
@@ -576,8 +538,8 @@
         scale(calc(1 + (var(--wind-scale, 1) - 1) * var(--wind-exit-remaining)));
       transition-duration: .13s;
     }
-    .is-wind-cleared.is-wind-gliding .flight-wing {
-      rotate: calc(var(--wing-rotation) * var(--wind-exit-blend, 0));
+    .is-wind-cleared.is-wind-gliding .flight-sprite {
+      rotate: calc(var(--bird-tilt) * var(--wind-exit-blend, 0));
     }
 
     .is-soaring .flight-status, .is-soaring .flight-height { display: none; }
@@ -956,12 +918,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .perch, .chick, .is-flight-waiting .flight-bird, .is-flight-waiting .flight-wing,
+      .perch, .chick, .is-flight-waiting .flight-bird, .is-flight-waiting .flight-sprite,
       .is-flying.is-soaring .flight-bird { animation: none; }
       .bird-sweat, .bird-tear, .wing-ripple { animation: none; }
       .flight-warning, .climb-effects, .fall-effects { transition: none; }
       .is-low-warning .flight-warning { animation: none; }
-      .is-dozing .flight-bird, .is-demonstrating .flight-wing { animation: none; }
+      .is-dozing .flight-bird, .is-demonstrating .flight-sprite { animation: none; }
       .rest-message { transition: none; }
       .is-boosting .boost-streaks, .is-boost-gliding .boost-streaks { display: none; }
       .is-boosting .rainbow-trail, .is-boost-gliding .rainbow-trail { animation: none; }
@@ -970,8 +932,8 @@
       .is-in-cloud .cloud-passage::after { animation: none; }
       .is-wind-challenge .flight-bird { transform: none; }
       .is-wind-cleared.is-wind-gliding .flight-bird { transform: none; transition-duration: 0s; }
-      .is-wind-challenge .flight-wing { transition-duration: 0s; }
-      .flight-wing, .arrival-message,
+      .is-wind-challenge .flight-sprite { transition-duration: 0s; }
+      .flight-sprite, .arrival-message,
       .chick, .idle-dialogue, .flight-bird,
       .guide, .guide strong, .pose-instructions, .camera { transition-duration: 0s; transition-delay: 0s; }
     }
@@ -1096,9 +1058,7 @@
           <span class="wing-ripple"></span>
           <span class="wing-ripple"></span>
         </div>
-        <img class="flight-wing flight-wing-left" src="assets/design-experiment/bird_open.png" alt="">
-        <img class="flight-wing flight-wing-right" src="assets/design-experiment/bird_open.png" alt="">
-        <img class="flight-body" src="assets/design-experiment/bird_open.png" alt="눈을 뜨고 날개를 펼친 아기새">
+        <img class="flight-sprite" src="assets/design-experiment/bird_open.png" alt="눈을 뜨고 날개를 펼친 아기새">
         <div class="fall-effects">
           <span class="fall-cry">으아아…!</span>
           <span class="bird-tear" aria-hidden="true"></span>
@@ -1191,7 +1151,7 @@
     const climbCry = flightBird.querySelector('.climb-cry');
     const wishDelay = 1500;
     const perch = document.querySelector('.perch');
-    const flightWings = [...flightBird.querySelectorAll('.flight-wing')];
+    const flightSprite = flightBird.querySelector('.flight-sprite');
     const flightStatus = document.querySelector('.flight-status');
     const windMessage = document.querySelector('.wind-instruction');
     const windCount = document.querySelector('.wind-count');
@@ -1271,7 +1231,7 @@
     let boostRecoveryUntil = 0;
     let armsGatheredAt = null;
     let gatherPoseHeld = false;
-    let keyboardWingAnimations = [];
+    let keyboardFlapAnimation = null;
     let flightFrame;
     let countdownFrame;
     let soloTimer;
@@ -1639,17 +1599,13 @@
     }
 
     function flapWithKeyboard() {
-      keyboardWingAnimations.forEach(animation => animation.cancel());
-      keyboardWingAnimations = flightWings.map((wing, index) => {
-        const direction = index === 0 ? 1 : -1;
-        const restingAngle = getComputedStyle(wing).rotate;
-        return wing.animate([
-          { rotate: restingAngle },
-          { rotate: `${36 * direction}deg`, offset: .28 },
-          { rotate: `${-48 * direction}deg`, offset: .65 },
-          { rotate: restingAngle }
-        ], { duration: 420, easing: 'ease-in-out' });
-      });
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      keyboardFlapAnimation?.cancel();
+      keyboardFlapAnimation = flightSprite.animate([
+        { scale: '1' },
+        { scale: '1.04 .93', offset: .4 },
+        { scale: '1' }
+      ], { duration: 420, easing: 'ease-in-out' });
     }
 
     function detectFlap(pose, now) {
@@ -1730,8 +1686,8 @@
       cancelAnimationFrame(flightFrame);
       cancelAnimationFrame(countdownFrame);
       stopFlightWind();
-      keyboardWingAnimations.forEach(animation => animation.cancel());
-      keyboardWingAnimations = [];
+      keyboardFlapAnimation?.cancel();
+      keyboardFlapAnimation = null;
       experienceStarted = false;
       keyboardFlight = false;
       isFirstTakeoff = false;
@@ -1977,7 +1933,8 @@
       }
 
       if (flightHeight === 100) {
-        keyboardWingAnimations.forEach(animation => animation.cancel());
+        keyboardFlapAnimation?.cancel();
+        keyboardFlapAnimation = null;
         startSoloFlight();
         return;
       }
