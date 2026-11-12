@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>아기새의 첫 비행</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&amp;display=swap">
   <style>
     :root {
       color-scheme: light;
@@ -44,7 +45,85 @@
       transform: translateY(calc(100% * (var(--flight-progress, 0) - 1) * var(--sky-travel) / (1 + var(--sky-travel))));
     }
 
-    .is-flying .flight-sky { display: block; }
+    .is-flying .flight-sky { display: block; filter: blur(.38cqw); scale: 1.025; }
+
+    .flight-sky::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(#4899dc 5%, #75b8ed 45%, #c9eaf9 86%);
+      opacity: var(--clear-sky, 0);
+      transition: opacity .45s ease;
+    }
+
+    .cloud-passage {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: var(--cloud-density, 0);
+      background: radial-gradient(ellipse at 50% 48%, #f9fdfff0, #e5f4fa7a 78%);
+      transition: opacity .32s ease-out;
+    }
+
+    .cloud-passage::before, .cloud-passage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+
+    .cloud-passage::before {
+      background:
+        radial-gradient(ellipse 25% 21% at 13% 31%, #fff 32%, transparent 100%),
+        radial-gradient(ellipse 33% 25% at 88% 62%, #fff 35%, transparent 100%),
+        radial-gradient(ellipse 16% 14% at 69% 24%, #f7fcff 35%, transparent 100%),
+        radial-gradient(ellipse 19% 16% at 31% 78%, #fff 28%, transparent 100%);
+      translate: 0 calc((var(--cloud-progress, 0) - .5) * 23cqw);
+    }
+
+    .cloud-passage::after {
+      mask-image: linear-gradient(90deg, #000, transparent 37%, transparent 63%, #000);
+      background-image:
+        radial-gradient(ellipse .75cqw .32cqw at 15% 28%, #fff 50%, transparent),
+        radial-gradient(ellipse .4cqw .24cqw at 60% 70%, #fff 50%, transparent),
+        radial-gradient(ellipse 1.1cqw .38cqw at 81% 45%, #fff 50%, transparent);
+      background-size: 21cqw 12cqw;
+    }
+
+    .is-in-cloud .cloud-passage::after { animation: cloud-particles 1.65s linear infinite; }
+    @keyframes cloud-particles { to { background-position: -21cqw 12cqw; } }
+
+    .ascent-dust {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .45s ease;
+    }
+
+    .is-climbing .ascent-dust { opacity: .8; }
+
+    .ascent-dust::before, .ascent-dust::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse at 14% 30%, #fff1c9 0 .12cqw, transparent .24cqw),
+        radial-gradient(ellipse at 49% 72%, #fff9e6 0 .07cqw, transparent .19cqw),
+        radial-gradient(ellipse at 78% 15%, #ffe8ba 0 .1cqw, transparent .21cqw);
+      background-size: 22cqw 18cqw;
+      animation: dust-drift 2.4s linear infinite;
+    }
+
+    .ascent-dust::after {
+      translate: 10cqw 7cqw;
+      opacity: .65;
+      animation-duration: 3.4s;
+      animation-delay: -1.2s;
+    }
+
+    @keyframes dust-drift {
+      to { background-position: -22cqw 18cqw; }
+    }
 
     .boost-streaks {
       position: absolute;
@@ -69,9 +148,18 @@
     }
 
     .boost-streaks::after { left: 7%; height: 3cqw; }
-    .is-boosting .boost-streaks { opacity: 1; }
-    .is-boosting .boost-streaks::before { animation: boost-stream 1.2s linear infinite; }
-    .is-boosting .boost-streaks::after { animation: boost-stream 1.55s -.7s linear infinite; }
+    .is-boosting .boost-streaks, .is-boost-gliding .boost-streaks {
+      opacity: var(--boost-fade, 1);
+      background-image:
+        radial-gradient(ellipse 11cqw 2cqw at 16% 20%, #fff9, transparent),
+        radial-gradient(ellipse 15cqw 2.5cqw at 81% 59%, #f8ffffa8, transparent),
+        radial-gradient(ellipse 7cqw 1.5cqw at 35% 84%, #fff8, transparent);
+      background-size: 100% 100%;
+      animation: updraft-clouds .65s linear infinite;
+    }
+    .is-boosting .boost-streaks::before, .is-boost-gliding .boost-streaks::before { animation: boost-stream .72s linear infinite; }
+    .is-boosting .boost-streaks::after, .is-boost-gliding .boost-streaks::after { animation: boost-stream .95s -.45s linear infinite; }
+    @keyframes updraft-clouds { to { background-position: 0 56.25cqw; } }
 
     @keyframes boost-stream {
       from { transform: translateY(-46cqw); }
@@ -88,7 +176,7 @@
       pointer-events: none;
       opacity: 0;
       transform: scale(1.12);
-      transition: opacity .45s ease-out, transform 5s ease-out;
+      transition: opacity .85s ease-in-out, transform 5s ease-out;
     }
 
     .is-soaring .solo-sky { transform: scale(1); }
@@ -156,16 +244,155 @@
     .is-tracking .perch .flight-bird { opacity: 1; visibility: visible; transition-delay: 0s; }
 
     .is-flying .flight-bird {
-      top: calc(50% + var(--fall-progress, 0) * 34%);
+      top: calc(50% * (1 - var(--final-climb, 0)) + 65% * (1 - var(--takeoff-progress, 0)));
       width: 30%;
+      filter: drop-shadow(0 0 .28cqw #fff4c88c);
       translate: -50% -50%;
-      transition: transform .3s ease-out;
+      transition: transform .48s ease-in-out;
     }
+    .is-flying.is-at-ground .flight-bird { display: none; }
 
     .is-falling .flight-bird { transform: rotate(-7deg) scale(.96, .93); }
+    .is-falling.is-slumped .flight-bird { transform: translateY(1.6cqw) rotate(-5deg) scale(.92, .76); }
+    .is-slumped .flight-wing-left { rotate: -56deg; }
+    .is-slumped .flight-wing-right { rotate: 56deg; }
+    .is-climbing .flight-bird { transform: translateY(-.55cqw) scale(1.025); }
+    .is-flight-waiting .flight-bird { animation: waiting-sway 2s ease-in-out infinite; }
+    .is-flight-waiting .flight-wing { animation: waiting-flap .85s ease-in-out infinite; }
+    @keyframes waiting-sway {
+      0%, 100% { rotate: -2.5deg; }
+      50% { rotate: 2.5deg; }
+    }
+    @keyframes waiting-flap {
+      0%, 100% { rotate: calc(var(--downstroke-rotation) * .6); }
+      50% { rotate: var(--glide-rotation); }
+    }
+    .is-dozing .flight-bird {
+      transform: translateY(.65cqw) rotate(9deg) scale(.96);
+      animation: doze-breath 1.15s ease-in-out infinite;
+    }
+    .is-waking .flight-bird { transform: translateY(-.75cqw) rotate(-5deg) scale(1.04); }
+    .is-demonstrating .flight-wing { animation: demo-flap .72s ease-in-out 2; }
 
-    .bird-sweat, .bird-sparkle, .rainbow-trail { display: none; pointer-events: none; }
-    .is-falling .bird-sweat, .is-boosting .bird-sparkle, .is-boosting .rainbow-trail { display: block; }
+    @keyframes doze-breath {
+      50% { scale: 1 .96; }
+    }
+
+    @keyframes demo-flap {
+      0%, 100% { rotate: var(--wing-rotation); }
+      34% { rotate: calc(var(--glide-rotation) * 5); }
+      68% { rotate: calc(var(--downstroke-rotation) * 2.7); }
+    }
+
+    .rest-message {
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+    .is-dozing .rest-message, .is-demonstrating .rest-message { opacity: 1; }
+
+    .rainbow-trail { display: none; pointer-events: none; }
+    .is-boosting .rainbow-trail,
+    .is-boost-gliding .rainbow-trail { display: block; }
+    .is-boost-gliding .rainbow-trail { opacity: var(--boost-fade, 0); }
+
+    .flight-warning {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      background: radial-gradient(ellipse, #f4383844 20%, #d10e33cf 100%);
+      opacity: 0;
+      transition: opacity .3s ease;
+    }
+
+    .is-low-warning .flight-warning {
+      opacity: 1;
+      animation: warning-pulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes warning-pulse {
+      from { opacity: .35; }
+      to { opacity: 1; }
+    }
+
+    .climb-effects, .fall-effects {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .35s ease, visibility 0s linear .35s;
+    }
+
+    .is-climbing .climb-effects, .is-falling .fall-effects {
+      opacity: 1;
+      visibility: visible;
+      transition-delay: 0s;
+    }
+
+    .climb-ripples { z-index: -1; }
+    .flight-bird { isolation: isolate; }
+
+    .fall-cry {
+      position: absolute;
+      bottom: 88%;
+      left: 50%;
+      translate: -50% 0;
+      margin: 0;
+      padding: .35cqw 1.15cqw;
+      border-radius: 1.5cqw;
+      background: #fff5f2;
+      color: #852841;
+      font-size: 2cqw;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .bird-tear {
+      position: absolute;
+      top: 41%;
+      left: 39%;
+      width: 3%;
+      aspect-ratio: .7;
+      border-radius: 65% 65% 60% 60%;
+      background: #7ae1ff;
+      box-shadow: inset .12cqw .1cqw #fff9;
+      animation: tear-stream .65s ease-in infinite;
+    }
+
+    .bird-tear + .bird-tear { left: 58%; animation-delay: -.3s; }
+
+    @keyframes tear-stream {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(4cqw); }
+    }
+
+    .wing-ripple {
+      position: absolute;
+      top: 35%;
+      left: 0;
+      width: 41%;
+      height: 58%;
+      border-radius: 50%;
+      border-left: .33cqw solid #fff;
+      box-shadow: inset .28cqw 0 .55cqw #fff8;
+      --ripple-travel: -7cqw;
+      animation: wing-ripple .65s ease-out infinite;
+    }
+
+    .wing-ripple + .wing-ripple {
+      left: auto;
+      right: 0;
+      border-left: 0;
+      border-right: .33cqw solid #fff;
+      box-shadow: inset -.28cqw 0 .55cqw #fff8;
+      --ripple-travel: 7cqw;
+    }
+
+    @keyframes wing-ripple {
+      from { opacity: .9; transform: scale(.65); }
+      to { opacity: 0; transform: translateX(var(--ripple-travel)) scale(1.7); }
+    }
 
     .bird-sweat {
       position: absolute;
@@ -180,33 +407,13 @@
     }
 
     .bird-sweat + .bird-sweat { top: 32%; left: 68%; width: 3%; }
-    .is-falling .bird-sweat { animation: sweat-drop 1.2s ease-in infinite; }
-    .is-falling .bird-sweat + .bird-sweat { animation-delay: -.55s; }
+    .bird-sweat { animation: sweat-drop 1.2s ease-in infinite; }
+    .bird-sweat + .bird-sweat { animation-delay: -.55s; }
 
     @keyframes sweat-drop {
       0% { opacity: 0; transform: rotate(-24deg) scale(.65); }
       25%, 60% { opacity: 1; }
       100% { opacity: 0; transform: translateY(2cqw) rotate(-24deg); }
-    }
-
-    .bird-sparkle {
-      position: absolute;
-      top: 36.7%;
-      left: 42.4%;
-      width: 4.6%;
-      aspect-ratio: 1;
-      translate: -50% -50%;
-      background: radial-gradient(circle, #fff 22%, #fff48d 62%, #ffbe52);
-      clip-path: polygon(50% 0, 64% 36%, 100% 50%, 64% 64%, 50% 100%, 36% 64%, 0 50%, 36% 36%);
-    }
-
-    .bird-sparkle + .bird-sparkle { left: 58.9%; }
-    .is-boosting .bird-sparkle { animation: sparkle 1.45s ease-in-out infinite; }
-    .is-boosting .bird-sparkle + .bird-sparkle { animation-delay: -.34s; }
-
-    @keyframes sparkle {
-      0%, 100% { transform: scale(.75) rotate(-12deg); opacity: .7; }
-      50% { transform: scale(1.2) rotate(12deg); opacity: 1; }
     }
 
     .rainbow-trail {
@@ -223,21 +430,15 @@
       filter: blur(.34cqw);
     }
 
-    .is-boosting .rainbow-trail { animation: rainbow-surge .85s ease-in-out infinite alternate; }
-
+    .is-boosting .rainbow-trail, .is-boost-gliding .rainbow-trail {
+      animation: rainbow-surge .9s ease-in-out infinite alternate;
+    }
     @keyframes rainbow-surge {
-      from { transform: scale(.88, .82); }
-      to { transform: scale(1.08, 1.18); }
+      from { transform: scale(.92, .86); }
+      to { transform: scale(1.05, 1.14); }
     }
 
-    .is-soaring .flight-bird {
-      animation: soar-glide 2.8s ease-in-out infinite;
-    }
-
-    @keyframes soar-glide {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-.65cqw); }
-    }
+    .is-flying.is-soaring .flight-bird { display: none; }
 
     .flight-bird img {
       position: absolute;
@@ -275,37 +476,144 @@
         67% 64%, 70.2% 72%, 100% 76%);
     }
 
-    .is-soaring .flight-wing {
-      rotate: var(--glide-rotation);
-      transition: none;
-      animation: soar-wing 1.2s ease-in-out infinite;
-    }
-
-    @keyframes soar-wing {
-      0%, 100% { rotate: calc(var(--glide-rotation) * 2.8); }
-      52% { rotate: var(--downstroke-rotation); }
-    }
-
     .flight-status {
       position: absolute;
       top: 9%;
       left: 50%;
       translate: -50% 0;
       margin: 0;
-      padding: .43cqw 1.25cqw;
-      border: 1px solid #fff9;
-      border-radius: 99px;
-      background: #fffaf0e8;
-      font-size: 1.65cqw;
-      font-weight: 800;
+      width: max-content;
+      max-width: 76%;
+      padding: .55cqw 1.35cqw;
+      border: 1px solid #dfd7c6;
+      border-radius: .8cqw;
+      background: #fffaf0;
+      color: #252a29;
+      font-size: 1.85cqw;
+      font-weight: 700;
+      line-height: 1.4;
+      text-align: center;
+      word-break: keep-all;
     }
 
+    .is-flying .flight-status:empty { display: none; }
     .is-flying .boost-message { display: none; color: #70420e; background: #fff5c9f0; }
     .is-boosting .flight-status:not(.boost-message) { display: none; }
     .is-boosting .boost-message { display: block; }
+    .is-flying .boost-guide {
+      display: none;
+      z-index: 2;
+      width: max-content;
+      max-width: 76%;
+      padding: .65cqw 1.7cqw;
+      border: .22cqw solid transparent;
+      border-radius: 1.35cqw;
+      background: linear-gradient(#fffaf2, #fffaf2) padding-box,
+        linear-gradient(105deg, #f18b9f, #f3c970, #88cba0, #9b9de9) border-box;
+      box-shadow: 0 .3cqw 1.2cqw #304a632e;
+      color: #302546;
+      text-align: center;
+    }
+    .boost-guide strong { display: block; margin-bottom: .15cqw; color: #68388a; font-size: 2.05cqw; }
+    .is-flying.is-updraft-preparing .boost-guide {
+      top: 42%;
+      translate: -50% -50%;
+      padding: 1.3cqw 2.1cqw;
+      background: linear-gradient(#fff8e4, #f6e9c3) padding-box,
+        linear-gradient(108deg, #ad916a, #6b5c46) border-box;
+    }
+    .is-boost-ready .flight-status:not(.boost-guide) { display: none; }
+    .is-boost-ready .boost-guide { display: block; }
+    .is-flying .wind-message { display: none; }
+    .is-flying.is-wind-challenge .wind-message,
+    .is-flying.is-wind-cleared .wind-message { display: block; }
+    .is-wind-challenge .flight-status:not(.wind-message),
+    .is-wind-cleared .flight-status:not(.wind-message) { display: none; }
+    .is-flying .wind-message {
+      background: #fff2d0;
+      border: .14cqw solid #62513b;
+      box-shadow: .12cqw .16cqw #62513b50;
+    }
+    .wind-success { display: none; }
+    .is-wind-balanced .wind-success, .is-wind-cleared .wind-success {
+      display: block;
+      color: #63412d;
+      font-size: 2.3cqw;
+    }
 
-    .is-soaring .flight-status, .is-soaring .flight-height,
-    .is-soaring .sound-button { display: none; }
+    .wind-clouds {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      background-image:
+        radial-gradient(ellipse 13cqw 2cqw at 25% 26%, #fff9, transparent),
+        radial-gradient(ellipse 18cqw 3cqw at 70% 72%, #f7ffffa8, transparent),
+        radial-gradient(ellipse 7cqw .16cqw at 30% 48%, #fff, transparent),
+        radial-gradient(ellipse 11cqw .2cqw at 73% 85%, #fff, transparent);
+      background-size: 100cqw 100%;
+      transition: opacity .35s ease;
+    }
+
+    .is-wind-challenge .wind-clouds, .is-wind-cleared .wind-clouds { animation: wind-clouds 1s linear infinite; }
+    .is-wind-challenge .wind-clouds { opacity: 1; }
+    .is-wind-cleared .wind-clouds { transition-duration: .8s; }
+    @keyframes wind-clouds { to { background-position: 100cqw 0; } }
+    .is-wind-challenge .flight-bird {
+      transform: translate(var(--wind-drift, 0px), var(--wind-bob, -.55cqw))
+        rotate(var(--wind-tilt, 0deg)) scale(var(--wind-scale, 1.025));
+      transition: transform .13s ease-out;
+    }
+    .is-wind-challenge .flight-wing { transition-duration: .32s; }
+    .wind-bird-guide {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 30%;
+      aspect-ratio: 1672 / 941;
+      translate: -50% -50%;
+      scale: 1.11;
+      color: #fff4d2;
+      filter: drop-shadow(0 0 .24cqw currentColor);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease, color .2s ease;
+    }
+    .wind-bird-guide::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: currentColor;
+      mask: url("assets/chick-flight-front.png") center / 100% 100% no-repeat;
+    }
+    .is-wind-challenge .wind-bird-guide { opacity: .58; }
+    .is-wind-balanced .wind-bird-guide { color: #aff6bc; }
+    .is-wind-gliding .flight-wing { rotate: 0deg; }
+    .is-boosting .flight-wing {
+      rotate: calc(var(--downstroke-rotation) * 1.8);
+      transition-duration: .3s;
+    }
+    .is-boost-gliding .flight-wing {
+      rotate: calc(var(--wing-rotation) * (1 - var(--boost-fade, 0)) +
+        var(--downstroke-rotation) * 1.8 * var(--boost-fade, 0));
+    }
+    .is-boosting .flight-bird, .is-boost-gliding .flight-bird {
+      transform: translateY(calc(-3cqw * var(--boost-fade, 1))) scale(1.02);
+    }
+    .is-wind-cleared.is-wind-gliding .flight-bird {
+      --wind-exit-remaining: calc(1 - var(--wind-exit-blend, 0));
+      transform: translate(
+        calc(var(--wind-drift, 0px) * var(--wind-exit-remaining)),
+        calc(var(--wind-bob, 0px) * var(--wind-exit-remaining))
+      ) rotate(calc(var(--wind-tilt, 0deg) * var(--wind-exit-remaining)))
+        scale(calc(1 + (var(--wind-scale, 1) - 1) * var(--wind-exit-remaining)));
+      transition-duration: .13s;
+    }
+    .is-wind-cleared.is-wind-gliding .flight-wing {
+      rotate: calc(var(--wing-rotation) * var(--wind-exit-blend, 0));
+    }
+
+    .is-soaring .flight-status, .is-soaring .flight-height { display: none; }
     .is-soaring .camera { opacity: 0; pointer-events: none; }
 
     .arrival-message {
@@ -351,7 +659,51 @@
     }
 
     .return-overlay p { margin: 0; font-size: 2.2cqw; }
-    .return-overlay strong { font-size: 5cqw; }
+    .return-flight-title { display: none; font-size: 2.7cqw; }
+    .is-soaring .return-flight-title { display: block; margin-bottom: .35cqw; }
+    .is-sky-playing .return-overlay {
+      background: transparent;
+      text-shadow: 0 .1cqw .25cqw #142e3f, 0 0 .9cqw #142e3f;
+    }
+    .is-soaring:has(.return-overlay:not([hidden])) .arrival-message { visibility: hidden; }
+
+    .timer-clock, .height-value, .height-scale {
+      font-family: "Gaegu", "Segoe Print", "Gungsuh", cursive;
+      font-weight: 700;
+    }
+
+    .timer-clock {
+      position: absolute;
+      z-index: 6;
+      bottom: 7%;
+      left: 50%;
+      translate: -50% 0;
+      display: grid;
+      place-items: center;
+      width: 4.9cqw;
+      aspect-ratio: 1;
+      border: .2cqw solid #5b4834;
+      border-radius: 48% 51% 47% 51%;
+      background: #fff3d0;
+      box-shadow: inset 0 0 0 .25cqw #e8c992, .12cqw .15cqw #5b483455;
+      color: #503924;
+      font-size: 3.8cqw;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .timer-clock::before, .timer-clock::after {
+      content: "";
+      position: absolute;
+      border: .12cqw solid #5b4834;
+      border-radius: .16cqw;
+      background: #e8c992;
+    }
+
+    .timer-clock::before { top: -.56cqw; width: 1.05cqw; height: .4cqw; }
+    .timer-clock::after { top: .12cqw; right: -.12cqw; width: .48cqw; height: .29cqw; rotate: -38deg; }
+    .timer-clock:empty,
+    .return-overlay:not([hidden]) ~ .timer-clock:not(.return-count) { display: none; }
 
     @keyframes breeze {
       0%, 100% { transform: rotate(-.65deg); }
@@ -367,7 +719,7 @@
     .story {
       position: absolute;
       inset: 0;
-      padding-top: 5.6cqw;
+      padding-top: 7cqw;
       text-align: center;
       pointer-events: none;
     }
@@ -384,7 +736,9 @@
     .idle-dialogue {
       position: absolute;
       top: 33%;
-      left: 33%;
+      left: 23%;
+      translate: -50% 0;
+      white-space: nowrap;
       margin: 0;
       padding: .65cqw 1.2cqw;
       border-radius: 1.25cqw;
@@ -393,17 +747,6 @@
       font-weight: 700;
       letter-spacing: -.035em;
       line-height: 1.45;
-    }
-
-    .idle-dialogue::after {
-      content: "";
-      position: absolute;
-      top: calc(100% - 1px);
-      left: 1.3cqw;
-      width: 1.15cqw;
-      height: .7cqw;
-      background: inherit;
-      clip-path: polygon(0 0, 100% 0, 8% 100%);
     }
 
     .guide {
@@ -423,12 +766,15 @@
     .guide strong {
       display: block;
       font-size: 2.05cqw;
-      letter-spacing: -.045em;
+      line-height: 1.35;
     }
 
-    .guide p { margin: .32cqw 0 0; font-size: 1.36cqw; }
-    .guide .pose-status { color: #286256; font-weight: 700; }
+    .guide p { margin: .32cqw 0 0; font-size: 1.6cqw; line-height: 1.4; }
+    .guide .pose-status { color: #214e44; font-weight: 700; }
     .pose-status:empty { display: none; }
+    .countdown-instruction { display: none; }
+    .is-counting-down .guide strong, .is-counting-down .pose-instructions { display: none; }
+    .is-counting-down .countdown-instruction { display: block; font-weight: 700; }
 
     .scene:not(.is-tracking) .guide {
       border-color: transparent;
@@ -445,10 +791,11 @@
 
     .flight-height {
       position: absolute;
-      top: 5%;
+      top: 50%;
       left: 3%;
-      width: 17%;
-      padding: .85cqw 1.05cqw .95cqw;
+      width: 10cqw;
+      translate: 0 -50%;
+      padding: .9cqw .7cqw;
       border: 1px solid #fff9;
       border-radius: 1.1cqw;
       background: #fffaf0ea;
@@ -456,68 +803,60 @@
     }
 
     .height-label {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: .62cqw;
-      font-size: 1.18cqw;
+      display: grid;
+      justify-items: center;
+      gap: .15cqw;
+      font-size: 1.15cqw;
       font-weight: 700;
     }
 
-    .height-value { font-size: 1.5cqw; font-variant-numeric: tabular-nums; }
-
-    progress {
-      display: block;
-      width: 100%;
-      height: .48cqw;
-      appearance: none;
-      overflow: hidden;
-      border: 0;
-      border-radius: 99px;
-      background: #d6e2de;
-    }
-
-    progress::-webkit-progress-bar { background: #d6e2de; }
-    progress::-webkit-progress-value { background: #398476; }
-    progress::-moz-progress-bar { background: #398476; }
-
-    .height-scale { display: none; }
-
+    .height-value { font-size: 1.8cqw; font-variant-numeric: tabular-nums; }
     .scene:not(.is-flying) .flight-height { display: none; }
 
-    .is-flying .flight-height {
-      top: 50%;
-      width: 8.6cqw;
-      translate: 0 -50%;
-    }
-
-    .is-flying .height-label {
-      display: grid;
-      justify-items: center;
-      gap: .24cqw;
-    }
-
-    .is-flying .height-value { font-size: 1.8cqw; }
-
-    .is-flying .height-track {
-      display: flex;
-      justify-content: center;
-      gap: .55cqw;
-    }
-
-    .is-flying progress {
-      width: .75cqw;
+    .height-track {
+      position: relative;
       height: 18cqw;
-      writing-mode: vertical-lr;
-      direction: rtl;
+      margin: 2.3cqw .45cqw 1.6cqw;
     }
 
-    .is-flying .height-scale {
+    .height-track::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 32%;
+      border-left: .18cqw dashed #718d92;
+    }
+
+    .height-scale {
+      position: absolute;
+      inset: -.65cqw 0;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      font-size: .86cqw;
+      align-items: flex-end;
+      color: #3c5358;
+      font-size: 1.05cqw;
+      line-height: 1.3cqw;
       font-variant-numeric: tabular-nums;
+    }
+
+    .height-face {
+      position: absolute;
+      left: 32%;
+      bottom: var(--height-position, 0%);
+      translate: -50% 50%;
+      width: 3.25cqw;
+      aspect-ratio: 1;
+      border: .14cqw solid #fff9e8;
+      border-radius: 50%;
+      background: #c5def3 url("assets/chick-flight-front.png") 50% 34% / 290% auto no-repeat;
+      box-shadow: 0 .1cqw .55cqw #27455650;
+    }
+
+    .height-track progress {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      clip-path: inset(50%);
     }
 
     .camera {
@@ -546,6 +885,39 @@
     }
 
     .camera.is-live video { visibility: visible; }
+
+    .camera-pose-lines, .camera-pose-feedback { display: none; pointer-events: none; }
+    .is-tracking .camera.is-live .camera-pose-lines,
+    .is-tracking .camera.is-live + .camera-pose-feedback { display: block; }
+    .is-tracking .camera.is-live { bottom: 8%; }
+
+    .camera-pose-lines {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: scaleX(-1);
+    }
+
+    .camera-pose-feedback {
+      position: absolute;
+      right: 3%;
+      bottom: 8%;
+      translate: 0 calc(100% + .35cqw);
+      width: 17%;
+      margin: 0;
+      padding: .3cqw .35cqw;
+      border-radius: .45cqw;
+      background: #10292aef;
+      color: #fffaf0;
+      font-size: clamp(12px, .95cqw, 22px);
+      line-height: 1.3;
+      text-align: center;
+      word-break: keep-all;
+      white-space: pre-line;
+    }
+
 
     .scene:not(.is-tracking):not(.is-flying) .camera.is-live {
       opacity: 0;
@@ -617,48 +989,190 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .perch, .chick, .is-soaring .flight-bird, .is-soaring .flight-wing { animation: none; }
-      .is-falling .bird-sweat, .is-boosting .bird-sparkle, .is-boosting .rainbow-trail { animation: none; }
-      .is-boosting .boost-streaks { display: none; }
-      .flight-wing, .solo-sky, .is-soaring .flight-bird, .arrival-message,
+      .perch, .chick, .is-flight-waiting .flight-bird, .is-flight-waiting .flight-wing { animation: none; }
+      .bird-sweat, .bird-tear, .wing-ripple { animation: none; }
+      .flight-warning, .climb-effects, .fall-effects { transition: none; }
+      .is-low-warning .flight-warning { animation: none; }
+      .is-dozing .flight-bird, .is-demonstrating .flight-wing { animation: none; }
+      .rest-message { transition: none; }
+      .is-boosting .boost-streaks, .is-boost-gliding .boost-streaks { display: none; }
+      .is-boosting .rainbow-trail, .is-boost-gliding .rainbow-trail { animation: none; }
+      .ascent-dust { display: none; }
+      .is-wind-challenge .wind-clouds, .is-wind-cleared .wind-clouds { animation: none; }
+      .is-in-cloud .cloud-passage::after { animation: none; }
+      .is-wind-challenge .flight-bird { transform: none; }
+      .is-wind-cleared.is-wind-gliding .flight-bird { transform: none; transition-duration: 0s; }
+      .is-wind-challenge .flight-wing { transition-duration: 0s; }
+      .flight-wing, .solo-sky, .arrival-message,
       .chick, .feet-shadow, .idle-dialogue, .flight-bird,
       .guide, .guide strong, .pose-instructions, .camera { transition-duration: 0s; transition-delay: 0s; }
+    }
+    .guide, .flight-status, .is-flying .boost-guide {
+      border-radius: .85cqw 1.35cqw .95cqw 1.2cqw / 1.1cqw .85cqw 1.25cqw .95cqw;
+    }
+
+    .idle-dialogue, .fall-cry, .arrival-message {
+      --ink: #514732;
+      --paper: #fbf0ce;
+      --balloon-tilt: -1.5deg;
+      padding: .55cqw 1.55cqw .65cqw;
+      border: .15cqw solid var(--ink);
+      border-radius: 26% 23% 27% 24% / 48% 43% 47% 42%;
+      background:
+        repeating-linear-gradient(174deg, transparent 0 .44cqw, #ab825208 .45cqw .49cqw),
+        linear-gradient(168deg, #fff7dd 8%, var(--paper) 62%, #ede8bb 100%);
+      box-shadow: .12cqw .16cqw 0 #51473250;
+      color: var(--ink);
+      font-family: "Gaegu", "Gungsuh", "궁서", "Malgun Gothic", cursive;
+      font-size: 2.25cqw;
+      font-weight: 700;
+      letter-spacing: -.035em;
+      line-height: 1.15;
+      rotate: var(--balloon-tilt);
+    }
+
+    .idle-dialogue::before, .idle-dialogue::after,
+    .fall-cry::before, .fall-cry::after,
+    .arrival-message::before, .arrival-message::after {
+      content: "";
+      position: absolute;
+      bottom: -.78cqw;
+      left: var(--tail-position, 21%);
+      width: .65cqw;
+      aspect-ratio: 1;
+      border: .11cqw solid var(--ink);
+      border-radius: 50%;
+      background: var(--paper);
+    }
+
+    .idle-dialogue::after, .fall-cry::after, .arrival-message::after {
+      bottom: -1.35cqw;
+      left: calc(var(--tail-position, 21%) + .64cqw);
+      width: .35cqw;
+    }
+
+    .idle-dialogue {
+      --balloon-tilt: 1.5deg;
+      --tail-position: 79%;
+      border-radius: 23% 26% 24% 27% / 43% 48% 42% 47%;
+      box-shadow: -.12cqw .16cqw 0 #51473250;
+    }
+    .idle-dialogue::before, .idle-dialogue::after { left: auto; right: calc(100% - var(--tail-position)); }
+    .idle-dialogue::after { right: calc(100% - var(--tail-position) - .64cqw); }
+
+    .fall-cry, .arrival-message { --tail-position: 47%; }
+    .fall-cry { --balloon-tilt: 2deg; }
+    .arrival-message { font-size: 3.15cqw; }
+
+    .fall-cry.flight-sound {
+      bottom: 76%;
+      left: 82%;
+      padding: 0;
+      border: 0;
+      background: none;
+      box-shadow: none;
+      color: #42382d;
+      font-size: 1.6cqw;
+      text-shadow: 0 0 .35cqw #fff, 0 .07cqw .12cqw #fff;
+    }
+    .flight-sound::before, .flight-sound::after { display: none; }
+    .fall-cry:empty, .arrival-message:empty { display: none; }
+    .fall-cry.flight-sound.sound-left { left: 18%; }
+    .fall-cry.ground-dialogue {
+      display: none;
+      bottom: 12%;
+      left: 50%;
+      z-index: 2;
+    }
+    .is-flying.is-at-ground .ground-dialogue {
+      display: block;
+      animation: ground-dialogue-sway 1.7s ease-in-out infinite;
+    }
+    @keyframes ground-dialogue-sway {
+      0%, 100% { rotate: -2.5deg; opacity: 1; }
+      50% { rotate: 2.5deg; opacity: .45; }
+    }
+    .scene:has(.return-overlay:not([hidden])) .ground-dialogue { visibility: hidden; }
+    .is-flying .ground-instruction {
+      display: none;
+      top: 50%;
+      translate: -50% -50%;
+      font-size: 2.25cqw;
+    }
+    .is-flying.is-at-ground .flight-status:not(.ground-instruction) { display: none; }
+    .is-flying.is-at-ground .ground-instruction {
+      display: block;
+      animation: ground-instruction-glow 1.35s ease-in-out infinite alternate;
+    }
+    @keyframes ground-instruction-glow {
+      from { box-shadow: 0 0 .3cqw #fff9; }
+      to { box-shadow: 0 0 1.35cqw .28cqw #fff4ae; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .is-flying.is-at-ground .ground-dialogue,
+      .is-flying.is-at-ground .ground-instruction { animation: none; }
     }
   </style>
 </head>
 <body>
   <main class="scene" aria-labelledby="title">
     <div class="flight-sky" aria-hidden="true"></div>
+    <div class="ascent-dust" aria-hidden="true"></div>
     <video class="solo-sky" src="image/sky.mp4" muted loop playsinline preload="auto" aria-hidden="true"></video>
     <div class="boost-streaks" aria-hidden="true"></div>
+    <div class="wind-clouds" aria-hidden="true"></div>
     <div class="perch">
       <span class="feet-shadow" aria-hidden="true"></span>
       <img class="chick" src="assets/idle-chick.png" alt="나뭇가지 위에 앉아 하늘을 바라보는 아기새">
       <div class="flight-bird">
         <span class="rainbow-trail" aria-hidden="true"></span>
+        <div class="climb-effects climb-ripples" aria-hidden="true">
+          <span class="wing-ripple"></span>
+          <span class="wing-ripple"></span>
+        </div>
         <img class="flight-wing flight-wing-left" src="assets/chick-flight-front.png" alt="">
         <img class="flight-wing flight-wing-right" src="assets/chick-flight-front.png" alt="">
         <img class="flight-body" src="assets/chick-flight-front.png" alt="정면을 보고 날개를 움직이는 아기새">
-        <span class="bird-sweat" aria-hidden="true"></span>
-        <span class="bird-sweat" aria-hidden="true"></span>
-        <span class="bird-sparkle" aria-hidden="true"></span>
-        <span class="bird-sparkle" aria-hidden="true"></span>
+        <div class="fall-effects">
+          <span class="fall-cry">으아아…!</span>
+          <span class="bird-tear" aria-hidden="true"></span>
+          <span class="bird-tear" aria-hidden="true"></span>
+        </div>
+        <div class="climb-effects">
+          <span class="fall-cry climb-cry flight-sound"></span>
+          <span class="bird-sweat" aria-hidden="true"></span>
+          <span class="bird-sweat" aria-hidden="true"></span>
+        </div>
+        <p class="fall-cry rest-message" role="status"></p>
       </div>
     </div>
+    <div class="wind-bird-guide" aria-hidden="true"></div>
+    <div class="cloud-passage" aria-hidden="true"></div>
     <p class="flight-status" role="status"></p>
-    <p class="flight-status boost-message" role="status">조금만 더 힘을 내!</p>
+    <p class="flight-status wind-message" role="status"><strong class="wind-success">좋아요!</strong><span class="wind-instruction"></span></p>
+    <p class="flight-status boost-message" role="status">상승기류를 타고 올라가요!</p>
+    <p class="flight-status boost-guide" role="status">
+      <strong class="updraft-title">잠깐! 상승기류를 만났어요!</strong>
+      <span class="updraft-instruction">양팔을 가슴 앞에 모았다가 활짝 펼쳐보세요!</span>
+    </p>
     <p class="arrival-message" role="status"></p>
+    <p class="fall-cry ground-dialogue" role="status">나 여기 있어요!</p>
+    <p class="flight-status ground-instruction" role="status">팔을 크게 흔들어 주세요</p>
     <div class="return-overlay" role="status" hidden>
-      <p>3초 뒤 대기화면으로 전환됩니다</p>
-      <strong class="return-count"></strong>
+      <strong class="return-flight-title">[아기새는 비행중]</strong>
+      <p>5초 후 대기 화면으로 돌아갑니다</p>
     </div>
+    <div class="timer-clock start-count" role="status"></div>
+    <div class="timer-clock wind-count" role="status"></div>
+    <div class="timer-clock return-count" role="status"></div>
 
     <div class="story">
       <h1 id="title">아기새의 첫 비행</h1>
       <p class="idle-dialogue">나도 하늘을 날고 싶어.</p>
       <div class="guide">
-        <strong>양팔을 펼쳐 날개를 만들어주세요!</strong>
-        <p class="pose-instructions">화면 앞에 서서 양팔을 들어보세요.</p>
+        <strong>양팔을 활짝 펼쳐 날개를 만들어 주세요!</strong>
+        <p class="pose-instructions">3초 동안 자세를 유지하면 아기새와 함께 날아올라요!</p>
+        <p class="countdown-instruction">그대로 유지해 주세요!</p>
         <p id="pose-status" class="pose-status" role="status"></p>
       </div>
     </div>
@@ -675,6 +1189,7 @@
           <span>50%</span>
           <span>0%</span>
         </div>
+        <span class="height-face" aria-hidden="true"></span>
       </div>
     </section>
 
@@ -683,45 +1198,81 @@
     <section class="camera" aria-label="웹캠 미리보기">
       <span class="camera-label" aria-hidden="true">내 모습</span>
       <video autoplay muted playsinline aria-label="내 모습"></video>
+      <canvas class="camera-pose-lines" aria-hidden="true"></canvas>
       <div class="camera-message">
         <p role="status">카메라를 켜는 중이에요.</p>
         <button type="button" hidden>다시 켜기</button>
       </div>
     </section>
+    <p class="camera-pose-feedback" role="status"></p>
+    <div class="flight-warning" aria-hidden="true"></div>
   </main>
 
   <script>
     const scene = document.querySelector('.scene');
     const camera = document.querySelector('.camera');
     const video = camera.querySelector('video');
+    const cameraPoseLines = camera.querySelector('.camera-pose-lines');
+    const cameraPoseContext = cameraPoseLines.getContext('2d');
+    const cameraPoseStatus = document.querySelector('.camera-pose-feedback');
     const cameraMessage = camera.querySelector('.camera-message');
     const status = cameraMessage.querySelector('[role="status"]');
     const retry = cameraMessage.querySelector('button');
     const flightBird = document.querySelector('.flight-bird');
+    const cloudPassage = document.querySelector('.cloud-passage');
+    const restMessage = flightBird.querySelector('.rest-message');
+    const fallCry = flightBird.querySelector('.fall-effects .fall-cry');
+    const climbCry = flightBird.querySelector('.climb-cry');
+    const wishDelay = 1500;
     const perch = document.querySelector('.perch');
     const flightWings = [...flightBird.querySelectorAll('.flight-wing')];
     const soloSky = document.querySelector('.solo-sky');
     const flightStatus = document.querySelector('.flight-status');
+    const windMessage = document.querySelector('.wind-instruction');
+    const windCount = document.querySelector('.wind-count');
+    const startCount = document.querySelector('.start-count');
+    const updraftTitle = document.querySelector('.updraft-title');
+    const updraftInstruction = document.querySelector('.updraft-instruction');
     const arrivalMessage = document.querySelector('.arrival-message');
     const poseStatus = document.querySelector('#pose-status');
     const heightGauge = document.querySelector('#height');
+    const heightTrack = heightGauge.parentElement;
     const heightValue = document.querySelector('.height-value');
     const soundButton = document.querySelector('.sound-button');
     const returnOverlay = document.querySelector('.return-overlay');
     const returnCount = document.querySelector('.return-count');
     const AudioEngine = window.AudioContext ?? window.webkitAudioContext;
     const holdDuration = 3000;
+    const holdTrackingGrace = 280;
     const visitorDelay = 2000;
     const detectionGrace = 500;
     const visitorAbsenceGrace = 1200;
     const guideFadeDuration = 650;
     const keyboardLift = 7.5;
-    const floorHeight = -24;
-    const boostHeight = 80;
-    const soloFlightDuration = 5000;
-    const returnDuration = 3000;
+    const takeoffHeight = 5;
+    const protectedHeight = 40;
+    const maximumDrop = 9.9;
+    const boostCeiling = 80;
+    const boostGlideDuration = 850;
+    const boostHandoffHold = 3000;
+    const boostStart = 70;
+    const boostWindowEnd = 75;
+    const windHeight = 45;
+    const windExitHeight = 50;
+    const windExitDuration = 850;
+    const balanceDuration = 3;
+    const updraftPreparation = 3000;
+    const cloudStart = 30;
+    const cloudEnd = 40;
+    const manualClimbSpeed = 26;
+    const firstTakeoffSpeed = 7;
+    const descentDelay = 340;
+    const soloFlightDuration = 6000;
+    const returnDuration = 5000;
     const mediaPipeUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21';
     let countdownEndsAt = null;
+    let lastSpreadAt = null;
+    let holdInterruptedAt = null;
     let visitorDetectedAt = null;
     let lastVisitorSeenAt = -Infinity;
     let guideShownAt = null;
@@ -735,7 +1286,26 @@
     let lastFlapAt = -Infinity;
     let lastFlightFrame = 0;
     let flightHeight = 0;
+    let landedOnce = false;
+    let passedProtectedHeight = false;
+    let descentStartHeight = null;
+    let encouragementAt = null;
+    let descentWarned = false;
+    let lastWarningAt = -Infinity;
+    let restingSince = null;
     let pendingLift = 0;
+    let isFirstTakeoff = false;
+    let firstFlightHoldUntil = 0;
+    let boostActive = false;
+    let boostStartedAt = 0;
+    let boostGlideStartedAt = null;
+    let updraftReadyAt = null;
+    let updraftClosed = false;
+    let windChallenge = null;
+    let climbStrokes = 0;
+    let boostRecoveryUntil = 0;
+    let armsGatheredAt = null;
+    let gatherPoseHeld = false;
     let keyboardWingAnimations = [];
     let flightFrame;
     let countdownFrame;
@@ -743,30 +1313,50 @@
     let flightIntroTimer;
     let returnEndsAt = null;
     let returnReason = null;
-    let waitForVisitorToLeave = false;
     let keyboardFlight = false;
 
     async function enableSound() {
-      if (!AudioEngine) return;
+      if (!AudioEngine || audioContext?.state === 'running') return;
 
       try {
-        audioContext ??= new AudioEngine();
+        if (!audioContext) {
+          audioContext = new AudioEngine();
+          audioContext.addEventListener('statechange', () => {
+            soundButton.hidden = audioContext.state === 'running';
+          });
+        }
         await audioContext.resume();
         soundButton.hidden = audioContext.state === 'running';
+        if (audioContext.state === 'running') playStartChime();
         if (experienceStarted) updateFlightWind(flightHeight === 100 ? .4 : 0);
       } catch (error) {
         console.warn('소리를 켤 수 없어요.', error);
       }
     }
 
+    function playLowWarning() {
+      if (audioContext?.state !== 'running') return;
+
+      for (const delay of [0, .24]) {
+        const at = audioContext.currentTime + delay;
+        const tone = audioContext.createOscillator();
+        const volume = audioContext.createGain();
+        tone.type = 'sine';
+        tone.frequency.setValueAtTime(1450, at);
+        tone.frequency.exponentialRampToValueAtTime(760, at + .16);
+        volume.gain.setValueAtTime(.001, at);
+        volume.gain.exponentialRampToValueAtTime(.13, at + .025);
+        volume.gain.exponentialRampToValueAtTime(.001, at + .19);
+        tone.connect(volume).connect(audioContext.destination);
+        tone.start(at);
+        tone.stop(at + .2);
+      }
+    }
+
     function playStartChime() {
-      if (!AudioEngine) return;
+      if (audioContext?.state !== 'running') return;
 
       try {
-        audioContext ??= new AudioEngine();
-        if (audioContext.state !== 'running') return;
-        soundButton.hidden = true;
-
         const start = audioContext.currentTime + .02;
         [587.33, 739.99, 880, 1174.66].forEach((frequency, index) => {
           const at = start + index * .09;
@@ -883,7 +1473,7 @@
           wristOffset.reach - elbowOffset.reach >= shoulderWidth * .18 &&
           Math.abs(wristOffset.rise) <= wristOffset.reach * .65 &&
           Math.abs(elbowOffset.rise) <= elbowOffset.reach * .85);
-        return { angle, spread };
+        return { angle, spread, joints: [shoulder, elbow, wrist] };
       }
 
       const leftOutward = Math.sign(shoulderDelta);
@@ -891,7 +1481,52 @@
       const rightArm = readArm(rightShoulder, rightElbow, rightWrist, -leftOutward);
       // The preview is mirrored, so the camera's right side appears on screen left.
       const [screenLeft, screenRight] = leftOutward > 0 ? [leftArm, rightArm] : [rightArm, leftArm];
-      return { screenLeft, screenRight, armsSpread: leftArm.spread && rightArm.spread };
+      const chestX = (leftShoulder.x + rightShoulder.x) / 2;
+      const shoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+      const armsGathered = [leftWrist, rightWrist].every(wrist => {
+        if (!jointIsVisible(wrist)) return false;
+        const chestDrop = (wrist.y - shoulderY) / (aspectRatio * shoulderWidth);
+        return Math.abs(wrist.x - chestX) <= shoulderWidth * .36 && chestDrop >= -.08 && chestDrop <= .65;
+      });
+      const armsSpread = leftArm.spread && rightArm.spread;
+      const shoulderTilt = Math.atan2((rightShoulder.y - leftShoulder.y) * leftOutward,
+        aspectRatio * shoulderWidth);
+      const armTilt = armsSpread ? Math.atan2((rightWrist.y - leftWrist.y) * leftOutward,
+        aspectRatio * Math.abs(rightWrist.x - leftWrist.x)) : shoulderTilt;
+      const tilt = (shoulderTilt * .65 + armTilt * .35) * 180 / Math.PI;
+      return { screenLeft, screenRight, armsSpread, armsGathered, tilt };
+    }
+
+    function canStartBoost() {
+      return !updraftClosed && !boostActive && flightHeight >= boostStart && flightHeight <= boostWindowEnd;
+    }
+
+    function showUpdraftStep(armsGathered) {
+      updraftTitle.textContent = armsGathered ? '좋아요!' : '지금!';
+      updraftInstruction.textContent = armsGathered ? '이제 양팔을 활짝 펼쳐요!' : '양팔을 가슴 앞으로 모아주세요!';
+    }
+
+    function detectBoost(pose, now) {
+      if (!canStartBoost() || updraftReadyAt === null || scene.classList.contains('is-updraft-preparing')) return;
+      if (armsGatheredAt !== null && now - armsGatheredAt > 2000) {
+        armsGatheredAt = null;
+        showUpdraftStep(false);
+        updraftTitle.textContent = '다시 해볼까요?';
+      }
+      if (!pose) return;
+
+      if (pose.armsGathered && !gatherPoseHeld && armsGatheredAt === null) {
+        armsGatheredAt = now;
+        showUpdraftStep(true);
+      }
+      gatherPoseHeld = pose.armsGathered;
+      if (armsGatheredAt === null || !pose.armsSpread) return;
+
+      boostActive = true;
+      boostStartedAt = now;
+      updraftClosed = true;
+      pendingLift = 0;
+      raisedStroke = null;
     }
 
     function updateArmTracking(pose) {
@@ -907,10 +1542,135 @@
       setWingAngle('--right-arm-angle', pose?.screenRight.angle);
     }
 
+    function showCameraPoseFeedback(pose) {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      if (cameraPoseContext && width && height) {
+        if (cameraPoseLines.width !== width) cameraPoseLines.width = width;
+        if (cameraPoseLines.height !== height) cameraPoseLines.height = height;
+        cameraPoseContext.clearRect(0, 0, width, height);
+        if (!pose?.armsSpread) drawCameraPoseGuide(width, height);
+      }
+
+      function showArm(arm) {
+        const visible = arm?.joints.every(joint => jointIsVisible(joint)) === true;
+        if (!visible || !arm.spread || !cameraPoseContext || !width || !height) return visible;
+
+        const [shoulder, elbow, wrist] = arm.joints;
+        cameraPoseContext.strokeStyle = '#a8f4b8';
+        cameraPoseContext.lineWidth = width * .009;
+        cameraPoseContext.lineCap = 'round';
+        cameraPoseContext.lineJoin = 'round';
+        cameraPoseContext.beginPath();
+        cameraPoseContext.moveTo(shoulder.x * width, shoulder.y * height);
+        cameraPoseContext.lineTo(elbow.x * width, elbow.y * height);
+        cameraPoseContext.lineTo(wrist.x * width, wrist.y * height);
+        cameraPoseContext.stroke();
+        return true;
+      }
+
+      const leftVisible = showArm(pose?.screenLeft);
+      const rightVisible = showArm(pose?.screenRight);
+      const message = !pose ? '카메라를 정면으로 봐 주세요' :
+        !leftVisible || !rightVisible ? '양팔이 보이도록\n한 걸음 뒤로 가 주세요' :
+        pose.armsSpread ? '좋아요! 그대로 유지해 주세요' : '양팔을 옆으로 펼쳐 주세요';
+      if (cameraPoseStatus.textContent !== message) cameraPoseStatus.textContent = message;
+    }
+
+    function drawCameraPoseGuide(width, height) {
+      const context = cameraPoseContext;
+      context.save();
+      context.strokeStyle = '#fff3d5d9';
+      context.lineWidth = width * .005;
+      context.lineJoin = 'round';
+      context.setLineDash([width * .012, width * .008]);
+      context.beginPath();
+      context.ellipse(width * .5, height * .25, height * .075, height * .09, 0, 0, Math.PI * 2);
+      context.stroke();
+
+      const outline = [[.47, .35], [.39, .4], [.12, .4], [.12, .47], [.4, .49],
+        [.43, .72], [.57, .72], [.6, .49], [.88, .47], [.88, .4], [.61, .4], [.53, .35]];
+      context.beginPath();
+      context.moveTo(outline[0][0] * width, outline[0][1] * height);
+      for (const [x, y] of outline.slice(1)) context.lineTo(x * width, y * height);
+      context.closePath();
+      context.stroke();
+      context.restore();
+    }
+
     function addLift(lift, now) {
-      pendingLift = Math.min(100 - flightHeight, pendingLift + lift);
+      if (boostActive || (updraftReadyAt !== null && !updraftClosed)) return;
+      if (boostGlideStartedAt === null) boostRecoveryUntil = 0;
+      pendingLift = Math.min(100 - flightHeight, lift);
       lastFlapAt = now;
+      climbStrokes++;
+      const climbSound = climbStrokes % 12 === 1 ? '흣챠!' : climbStrokes % 12 === 7 ? '읏차읏차!' : '';
+      if (climbSound) climbCry.classList.toggle('sound-left', Math.random() < .5);
+      climbCry.textContent = climbSound;
       playWingWhoosh(lift / 9);
+    }
+
+    function startWindChallenge(now) {
+      windChallenge = { startedAt: now, balancedFor: 0, tilt: 0, poseAt: -Infinity, keyboardBalance: false, clearedAt: null };
+      pendingLift = 0;
+      raisedStroke = null;
+      windMessage.textContent = '양팔을 수평으로 펼치고 몸을 왼쪽으로 살짝 기울여 주세요.';
+      windCount.textContent = '';
+      scene.classList.remove('is-climbing', 'is-boosting');
+      scene.classList.add('is-wind-challenge');
+    }
+
+    function updateWindChallenge(now, seconds) {
+      const gustTime = now - windChallenge.startedAt;
+      const entryTime = Math.min(1, gustTime / 700);
+      const entryBlend = entryTime ** 2 * (3 - 2 * entryTime);
+      const gust = 12 + 4 * Math.sin(gustTime / 260);
+      const gliding = windChallenge.keyboardBalance || now - windChallenge.poseAt <= 250;
+      const tilt = windChallenge.keyboardBalance ? -gust : gliding ? windChallenge.tilt : 0;
+      const drift = gust + Math.min(30, Math.max(-30, tilt));
+      const bank = Math.sin(gustTime / 235) * (gliding ? 9 : 24);
+      scene.style.setProperty('--wind-tilt', `${(drift + bank) * entryBlend}deg`);
+      scene.style.setProperty('--wind-drift', `${(drift * .12 + bank * .09) * entryBlend}cqw`);
+      scene.style.setProperty('--wind-bob', `${-.55 * (1 - entryBlend) + Math.sin(gustTime / 180) * .55 * entryBlend}cqw`);
+      scene.style.setProperty('--wind-scale', 1 + .025 * (1 - entryBlend));
+      scene.classList.toggle('is-wind-gliding', gliding);
+      updateFlightWind(.55 + .4 * entryBlend);
+      const isBalanced = gliding && Math.abs(drift) <= 7;
+      scene.classList.toggle('is-wind-balanced', isBalanced);
+      let instruction = '양팔을 수평으로 펼치고 몸을 왼쪽으로 살짝 기울여 주세요.';
+      if (gliding) {
+        instruction = isBalanced ? '그대로 유지해 주세요!' :
+          drift > 7 ? '몸을 왼쪽으로 조금 더 기울여 주세요.' : '몸을 오른쪽으로 조금만 되돌려 주세요.';
+      }
+      if (windMessage.textContent !== instruction) windMessage.textContent = instruction;
+      windChallenge.balancedFor = isBalanced ? windChallenge.balancedFor + seconds : 0;
+      const count = windChallenge.balancedFor > 0 && windChallenge.balancedFor < balanceDuration ?
+        String(Math.ceil(balanceDuration - windChallenge.balancedFor)) : '';
+      if (windCount.textContent !== count) windCount.textContent = count;
+      if (windChallenge.balancedFor < balanceDuration) return;
+
+      windChallenge.clearedAt = now;
+      windChallenge.exitPending = true;
+      scene.classList.remove('is-wind-challenge', 'is-wind-balanced');
+      scene.classList.add('is-wind-cleared');
+      windMessage.textContent = '바람을 타고 날아볼까요?';
+      lastFlapAt = now;
+      boostRecoveryUntil = now + windExitDuration + 1200;
+    }
+
+    function updateRestAnimation(now, isResting) {
+      if (!isResting) restingSince = null;
+      else restingSince ??= now;
+
+      const elapsed = restingSince === null ? 0 : now - restingSince;
+      const dozing = elapsed >= 700 && elapsed < 2500;
+      const waking = elapsed >= 2500 && elapsed < 2900;
+      const demonstrating = elapsed >= 2900;
+      scene.classList.toggle('is-dozing', dozing);
+      scene.classList.toggle('is-waking', waking);
+      scene.classList.toggle('is-demonstrating', demonstrating);
+      const text = dozing ? '코오오…' : demonstrating ? '다시 힘 내볼까?' : '';
+      if (text && text !== restMessage.textContent) restMessage.textContent = text;
     }
 
     function flapWithKeyboard() {
@@ -947,22 +1707,22 @@
       if (!raisedStroke.downstroke) {
         if (strokeTime > 1600 || (strokeTime < 130 && left <= -16 && right <= -16)) {
           raisedStroke = null;
+          return;
         } else if (left <= -16 && right <= -16) {
           raisedStroke.downstroke = { startedAt: now, leftLow: left, rightLow: right };
+        } else {
+          return;
         }
-        return;
       }
 
       const downstroke = raisedStroke.downstroke;
       downstroke.leftLow = Math.min(downstroke.leftLow, left);
       downstroke.rightLow = Math.min(downstroke.rightLow, right);
-      // Sample through the lower part of the stroke before measuring its width.
-      if (now - downstroke.startedAt >= 160) {
-        const sweep = Math.min(raisedStroke.leftPeak - downstroke.leftLow, raisedStroke.rightPeak - downstroke.rightLow);
-        if (sweep >= 38) {
-          const lift = 6.2 + Math.min(2.6, (sweep - 38) * .05);
-          addLift(lift, now);
-        }
+      const sweep = Math.min(raisedStroke.leftPeak - downstroke.leftLow, raisedStroke.rightPeak - downstroke.rightLow);
+      if (sweep >= 38) {
+        addLift(6.2 + Math.min(2.6, (sweep - 38) * .05), now);
+        raisedStroke = null;
+      } else if (now - downstroke.startedAt >= 160) {
         raisedStroke = null;
       }
     }
@@ -971,7 +1731,6 @@
       arrivalMessage.textContent = '해냈어! 드디어 하늘을 날 수 있어!';
       scene.classList.add('is-soaring');
       updateFlightWind(.4);
-      soloTimer = setTimeout(() => startReturn('complete', performance.now()), soloFlightDuration);
 
       try {
         await soloSky.play();
@@ -979,6 +1738,8 @@
       } catch (error) {
         console.warn('하늘 영상을 재생할 수 없어요.', error);
       }
+      if (!scene.classList.contains('is-soaring')) return;
+      soloTimer = setTimeout(() => startReturn('complete', performance.now()), soloFlightDuration);
     }
 
     function startReturn(reason, now) {
@@ -988,7 +1749,7 @@
       }
       returnReason = reason;
       returnEndsAt = now + returnDuration;
-      returnCount.textContent = '3';
+      returnCount.textContent = String(Math.ceil(returnDuration / 1000));
       returnOverlay.hidden = false;
     }
 
@@ -996,6 +1757,7 @@
       returnReason = null;
       returnEndsAt = null;
       returnOverlay.hidden = true;
+      returnCount.textContent = '';
     }
 
     function markVisitorSeen(now) {
@@ -1004,7 +1766,6 @@
     }
 
     function resetExperience(now) {
-      waitForVisitorToLeave = returnReason === 'complete' && now - lastVisitorSeenAt < visitorAbsenceGrace;
       clearReturn();
       clearTimeout(soloTimer);
       clearTimeout(flightIntroTimer);
@@ -1017,24 +1778,67 @@
       if (soloSky.readyState > 0) soloSky.currentTime = 0;
       experienceStarted = false;
       keyboardFlight = false;
+      isFirstTakeoff = false;
+      firstFlightHoldUntil = 0;
+      scene.classList.remove('is-flight-waiting');
       countdownEndsAt = null;
+      startCount.textContent = '';
+      lastSpreadAt = null;
+      holdInterruptedAt = null;
       visitorDetectedAt = null;
       guideShownAt = null;
-      lastVisitorSeenAt = waitForVisitorToLeave ? now : -Infinity;
+      lastVisitorSeenAt = -Infinity;
       pendingLift = 0;
+      boostActive = false;
+      boostStartedAt = 0;
+      boostGlideStartedAt = null;
+      updraftReadyAt = null;
+      updraftClosed = false;
+      windChallenge = null;
+      climbStrokes = 0;
+      boostRecoveryUntil = 0;
+      armsGatheredAt = null;
+      gatherPoseHeld = false;
       raisedStroke = null;
       lastFlapAt = -Infinity;
       flightHeight = 0;
+      landedOnce = false;
+      passedProtectedHeight = false;
+      descentStartHeight = null;
+      encouragementAt = null;
+      descentWarned = false;
+      lastWarningAt = -Infinity;
+      fallCry.textContent = '으아아…!';
+      climbCry.textContent = '';
+      fallCry.classList.remove('flight-sound');
+      windMessage.textContent = '';
+      windCount.textContent = '';
+      updraftTitle.textContent = '잠깐! 상승기류를 만났어요!';
+      updraftInstruction.textContent = '양팔을 가슴 앞에 모았다가 활짝 펼쳐보세요!';
+      updateRestAnimation(now, false);
       heightGauge.value = 0;
+      heightTrack.style.removeProperty('--height-position');
       heightValue.textContent = '0%';
       flightStatus.textContent = '';
       arrivalMessage.textContent = '';
       setPoseStatus('');
       scene.style.removeProperty('--flight-progress');
-      scene.style.removeProperty('--fall-progress');
+      scene.style.removeProperty('--final-climb');
+      scene.style.removeProperty('--takeoff-progress');
+      scene.style.removeProperty('--cloud-progress');
+      scene.style.removeProperty('--cloud-density');
+      scene.style.removeProperty('--clear-sky');
+      scene.style.removeProperty('--wind-tilt');
+      scene.style.removeProperty('--wind-drift');
+      scene.style.removeProperty('--wind-bob');
+      scene.style.removeProperty('--wind-scale');
+      scene.style.removeProperty('--wind-exit-blend');
+      scene.style.removeProperty('--boost-fade');
       flightBird.style.removeProperty('--left-arm-angle');
       flightBird.style.removeProperty('--right-arm-angle');
-      scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-sky-playing', 'is-falling', 'is-boosting');
+      scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-sky-playing', 'is-falling', 'is-boosting', 'is-boost-gliding');
+      scene.classList.remove('is-climbing', 'is-low-warning', 'is-boost-ready', 'is-counting-down', 'is-slumped', 'is-at-ground');
+      scene.classList.remove('is-wind-challenge', 'is-wind-balanced', 'is-wind-gliding', 'is-wind-cleared', 'is-in-cloud', 'is-updraft-preparing');
       perch.append(flightBird);
     }
 
@@ -1058,32 +1862,164 @@
       const seconds = Math.min(.05, Math.max(0, (now - lastFlightFrame) / 1000));
       lastFlightFrame = now;
 
-      const lift = Math.min(pendingLift, 17 * seconds);
-      pendingLift -= lift;
-      const fallProgress = Math.max(0, flightHeight / floorHeight);
-      const descent = now - lastFlapAt >= 1100 ? (4.5 + 10 * fallProgress) * seconds : 0;
-      const height = Math.max(floorHeight, flightHeight + lift - descent);
+      if (windChallenge?.clearedAt === null) {
+        updateWindChallenge(now, seconds);
+        flightFrame = requestAnimationFrame(animateFlight);
+        return;
+      }
+      if (windChallenge && now - windChallenge.clearedAt >= 1600) scene.classList.remove('is-wind-cleared');
+
+      if (updraftReadyAt !== null && now < updraftReadyAt) {
+        flightFrame = requestAnimationFrame(animateFlight);
+        return;
+      }
+      if (scene.classList.contains('is-updraft-preparing')) {
+        scene.classList.remove('is-updraft-preparing');
+        showUpdraftStep(false);
+      }
+
+      const isBoosting = boostActive;
+      const isWaitingForUpdraft = updraftReadyAt !== null && !updraftClosed;
+      if (boostGlideStartedAt !== null && now - boostGlideStartedAt >= boostGlideDuration) {
+        boostGlideStartedAt = null;
+        scene.style.removeProperty('--boost-fade');
+        flightStatus.textContent = '양팔을 위아래로 움직여 주세요!';
+      }
+      const isBoostGliding = boostGlideStartedAt !== null;
+      const boostFade = isBoostGliding ? 1 - (now - boostGlideStartedAt) / boostGlideDuration : 0;
+      if (isBoostGliding) scene.style.setProperty('--boost-fade', boostFade);
+      const isLeavingWind = Boolean(windChallenge?.exitPending);
+      const windExitProgress = isLeavingWind ? Math.min(1, (now - windChallenge.clearedAt) / windExitDuration) : 0;
+      const windExitBlend = windExitProgress ** 2 * (3 - 2 * windExitProgress);
+      if (isLeavingWind) scene.style.setProperty('--wind-exit-blend', windExitBlend);
+      const boostRemaining = boostCeiling - flightHeight;
+      const boostSpeed = 7 + 25 * Math.min(1, (now - boostStartedAt) / 420);
+      const climbSpeed = isFirstTakeoff ? firstTakeoffSpeed : manualClimbSpeed;
+      const lift = isLeavingWind || isBoostGliding ? 0 : isBoosting ?
+        Math.min(boostRemaining, Math.min(boostSpeed, Math.max(8, boostRemaining * 12)) * seconds) :
+        Math.min(pendingLift, climbSpeed * seconds);
+      if (!isBoosting) pendingLift -= lift;
+      const timeWithoutFlap = now - lastFlapAt;
+      const descentStartsAt = Math.max(lastFlapAt + descentDelay, boostRecoveryUntil, firstFlightHoldUntil);
+      const descentRamp = Math.min(1, Math.max(0, (now - descentStartsAt) / 280));
+      const groundApproach = .22 + .78 * Math.min(1, flightHeight / takeoffHeight);
+      const descent = isFirstTakeoff || isBoosting || isWaitingForUpdraft ? 0 :
+        13 * descentRamp * groundApproach * seconds;
+      const heightLimit = !windChallenge ? windHeight : !updraftClosed ? boostStart : 100;
+      const landingFloor = landedOnce ? Math.min(takeoffHeight, flightHeight) : 0;
+      const protectedFloor = passedProtectedHeight ? (descentStartHeight ?? flightHeight) - maximumDrop : 0;
+      const minimumHeight = Math.max(landingFloor, protectedFloor);
+      const height = isLeavingWind ?
+        windHeight + (windExitHeight - windHeight) * windExitBlend :
+        Math.min(heightLimit, Math.max(minimumHeight, flightHeight + lift - descent));
+      if (isLeavingWind && windExitProgress === 1) {
+        windChallenge.exitPending = false;
+        scene.classList.remove('is-wind-gliding');
+        if (pendingLift === 0) boostRecoveryUntil = now + 1200;
+      }
       const nextHeight = height >= 100 - .000001 ? 100 : height;
+      if (nextHeight > protectedHeight) passedProtectedHeight = true;
+      if (!passedProtectedHeight && nextHeight === 0 && flightHeight > 0) landedOnce = true;
+      scene.classList.toggle('is-at-ground', nextHeight === 0);
       const isFalling = nextHeight < flightHeight;
-      const isBoosting = !isFalling && nextHeight >= boostHeight && nextHeight < 100;
-      scene.classList.toggle('is-falling', isFalling);
+      if (isFalling) descentStartHeight ??= flightHeight;
+      if (nextHeight > flightHeight) {
+        descentStartHeight = null;
+        encouragementAt = null;
+        descentWarned = false;
+      }
+      const isCryingAtFloor = nextHeight === 0 && descentStartHeight !== null;
+      const isResting = !isCryingAtFloor && nextHeight === 0 && timeWithoutFlap >= descentDelay && lift === 0;
+      updateRestAnimation(now, isResting);
+      const dropDistance = Math.max(0, (descentStartHeight ?? nextHeight) - nextHeight);
+      const droppedFive = dropDistance >= 5;
+      const crossedTwenty = descentStartHeight !== null && descentStartHeight >= 20 && nextHeight < 20;
+      const warn = (isFalling && droppedFive) ||
+        (dropDistance >= 3 && (isCryingAtFloor || (isFalling && crossedTwenty)));
+      if (warn && (!descentWarned || (isCryingAtFloor && now - lastWarningAt >= 1600))) {
+        descentWarned = true;
+        lastWarningAt = now;
+        playLowWarning();
+      }
+      const isCrying = isFalling || isCryingAtFloor;
+      if (isCrying && (isCryingAtFloor || dropDistance >= 8)) encouragementAt ??= now;
+      const isWishing = isCrying && encouragementAt !== null && now - encouragementAt >= wishDelay;
+      const showFallSound = isFalling && encouragementAt === null && dropDistance <= 3;
+      const cryText = isWishing ? '날고 싶어요!' :
+        isCrying && encouragementAt !== null ? '조금만 더!' : showFallSound ? '으아아…!' : '';
+      fallCry.classList.toggle('flight-sound', showFallSound);
+      if (fallCry.textContent !== cryText) {
+        if (showFallSound) fallCry.classList.toggle('sound-left', Math.random() < .5);
+        fallCry.textContent = cryText;
+      }
+      scene.classList.toggle('is-low-warning', warn);
+      scene.classList.toggle('is-falling', isCrying);
+      scene.classList.toggle('is-slumped', isWishing);
+      scene.classList.toggle('is-climbing', !isLeavingWind && !isBoosting && nextHeight > flightHeight && nextHeight < 100);
+      scene.classList.toggle('is-flight-waiting', nextHeight === flightHeight && nextHeight > 0 &&
+        !isCrying && !isLeavingWind && !isBoosting && !isBoostGliding && !isWaitingForUpdraft);
       scene.classList.toggle('is-boosting', isBoosting);
-      const ascent = seconds > 0 ? Math.max(0, (nextHeight - flightHeight) / (17 * seconds)) : 0;
+      scene.classList.toggle('is-boost-gliding', isBoostGliding);
+      const ascent = seconds > 0 ? Math.max(0, (nextHeight - flightHeight) / (manualClimbSpeed * seconds)) : 0;
       const windIntensity = Math.round(Math.min(1, ascent * (isBoosting ? 1 : .6)) * 20) / 20;
-      updateFlightWind(windIntensity);
+      const windFade = isLeavingWind ? 1 - windExitProgress : boostFade;
+      updateFlightWind(isBoosting ? .95 * boostSpeed / 32 : isLeavingWind || isBoostGliding ?
+        Math.round(.95 * windFade * 20) / 20 : windIntensity);
 
       if (nextHeight !== flightHeight) {
         const gaugeHeight = Math.max(0, nextHeight);
         heightGauge.value = gaugeHeight;
+        heightTrack.style.setProperty('--height-position', `${gaugeHeight}%`);
         if (Math.floor(gaugeHeight) !== Math.floor(Math.max(0, flightHeight))) {
           heightValue.textContent = `${Math.floor(gaugeHeight)}%`;
         }
         flightHeight = nextHeight;
         // Keep more of the background travel for the final stretch.
-        const skyProgress = gaugeHeight < boostHeight ? .55 * gaugeHeight / boostHeight :
-          .55 + .45 * (gaugeHeight - boostHeight) / (100 - boostHeight);
+        const skyProgress = gaugeHeight < boostCeiling ? .55 * gaugeHeight / boostCeiling :
+          .55 + .45 * (gaugeHeight - boostCeiling) / (100 - boostCeiling);
         scene.style.setProperty('--flight-progress', skyProgress);
-        scene.style.setProperty('--fall-progress', Math.max(0, flightHeight / floorHeight));
+        const cloudProgress = Math.min(1, Math.max(0, (gaugeHeight - cloudStart) / (cloudEnd - cloudStart)));
+        scene.style.setProperty('--cloud-progress', cloudProgress);
+        scene.style.setProperty('--cloud-density', 4 * cloudProgress * (1 - cloudProgress));
+        scene.style.setProperty('--clear-sky', .7 * cloudProgress);
+        scene.classList.toggle('is-in-cloud', cloudProgress > 0 && cloudProgress < 1);
+        const finalClimb = Math.max(0, (gaugeHeight - 90) / 10);
+        scene.style.setProperty('--final-climb', finalClimb * finalClimb * (3 - 2 * finalClimb));
+        const takeoffProgress = Math.min(1, gaugeHeight / takeoffHeight);
+        scene.style.setProperty('--takeoff-progress', isFirstTakeoff ?
+          takeoffProgress ** 2 * (3 - 2 * takeoffProgress) : takeoffProgress);
+      }
+
+      if (isFirstTakeoff && pendingLift === 0) {
+        isFirstTakeoff = false;
+        lastFlapAt = now;
+        firstFlightHoldUntil = now + 3000;
+      }
+
+      if (isBoosting && flightHeight >= boostCeiling) {
+        boostActive = false;
+        boostGlideStartedAt = now;
+        lastFlapAt = now;
+        boostRecoveryUntil = now + boostGlideDuration + boostHandoffHold;
+      }
+      if (!canStartBoost()) {
+        gatherPoseHeld = false;
+        if (armsGatheredAt !== null) {
+          armsGatheredAt = null;
+          showUpdraftStep(false);
+        }
+      }
+      scene.classList.toggle('is-boost-ready', canStartBoost());
+
+      if (!windChallenge && flightHeight === windHeight) startWindChallenge(now);
+      if (updraftReadyAt === null && flightHeight === boostStart) {
+        updraftReadyAt = now + updraftPreparation;
+        pendingLift = 0;
+        raisedStroke = null;
+        armsGatheredAt = null;
+        scene.classList.remove('is-climbing');
+        scene.classList.add('is-updraft-preparing');
+        updateFlightWind(0);
       }
 
       if (flightHeight === 100) {
@@ -1096,35 +2032,61 @@
     }
 
     function startCountdown(now) {
-      waitForVisitorToLeave = false;
-      scene.classList.add('is-tracking');
+      scene.classList.add('is-tracking', 'is-counting-down');
+      setPoseStatus('');
       countdownEndsAt = now + holdDuration;
+      lastSpreadAt = now;
+      holdInterruptedAt = null;
+      tickStartCountdown(now);
+    }
+
+    function updateStartHold(pose, now) {
+      if (now - lastSpreadAt > holdTrackingGrace) {
+        countdownEndsAt = null;
+        startCount.textContent = '';
+        scene.classList.remove('is-counting-down');
+        setPoseStatus('');
+        if (pose?.armsSpread) startCountdown(now);
+        return;
+      }
+      if (!pose?.armsSpread) {
+        holdInterruptedAt ??= lastSpreadAt;
+        return;
+      }
+      if (holdInterruptedAt !== null) {
+        countdownEndsAt += now - holdInterruptedAt;
+        holdInterruptedAt = null;
+      }
+      lastSpreadAt = now;
       tickStartCountdown(now);
     }
 
     function tickStartCountdown(now) {
       const remaining = countdownEndsAt - now;
       if (remaining > 0) {
-        setPoseStatus(String(Math.ceil(remaining / 1000)));
-        countdownFrame = requestAnimationFrame(tickStartCountdown);
+        const count = String(Math.ceil(remaining / 1000));
+        if (startCount.textContent !== count) startCount.textContent = count;
+        if (keyboardFlight) countdownFrame = requestAnimationFrame(tickStartCountdown);
         return;
       }
 
       countdownEndsAt = null;
+      startCount.textContent = '';
       experienceStarted = true;
-      scene.classList.remove('is-tracking');
-      scene.classList.add('is-flying');
-      scene.append(flightBird);
+      scene.classList.remove('is-tracking', 'is-counting-down');
+      scene.classList.add('is-flying', 'is-at-ground');
+      scene.insertBefore(flightBird, cloudPassage);
       setPoseStatus('');
       flightStatus.textContent = '체험 시작!';
       playStartChime();
       updateFlightWind(0);
-      lastFlapAt = now;
+      isFirstTakeoff = true;
+      addLift(6, now);
       lastFlightFrame = now;
       flightFrame = requestAnimationFrame(animateFlight);
       flightIntroTimer = setTimeout(() => {
         if (flightStatus.textContent === '체험 시작!') {
-          flightStatus.textContent = '양팔을 위아래로 움직이거나 스페이스바를 눌러 날아보세요.';
+          flightStatus.textContent = '양팔을 위아래로 움직여 날아보세요.';
         }
       }, 1300);
     }
@@ -1143,13 +2105,6 @@
       const personDetected = landmarks != null &&
         [0, 2, 5, 11, 12, 23, 24].filter(index => jointIsVisible(landmarks[index], .45)).length >= 2;
 
-      if (waitForVisitorToLeave) {
-        if (personDetected) lastVisitorSeenAt = now;
-        if (now - lastVisitorSeenAt < visitorAbsenceGrace) return;
-        waitForVisitorToLeave = false;
-        lastVisitorSeenAt = -Infinity;
-      }
-
       if (personDetected) {
         if (now - lastVisitorSeenAt > detectionGrace) visitorDetectedAt = now;
         markVisitorSeen(now);
@@ -1157,20 +2112,32 @@
 
       if (flightHeight === 100) return;
       const pose = personDetected ? readArmPose(landmarks, video.videoWidth / video.videoHeight) : null;
+      if (!experienceStarted) showCameraPoseFeedback(pose);
 
       if (pose || experienceStarted) updateArmTracking(pose);
       if (experienceStarted) {
+        if (windChallenge?.clearedAt === null) {
+          windChallenge.poseAt = pose?.armsSpread ? now : -Infinity;
+          if (pose?.armsSpread) windChallenge.tilt = pose.tilt;
+          return;
+        }
+        if (scene.classList.contains('is-updraft-preparing')) return;
+        detectBoost(pose, now);
+        if (updraftReadyAt !== null && !updraftClosed) return;
         detectFlap(pose, now);
         return;
       }
 
-      if (countdownEndsAt !== null) return;
+      if (countdownEndsAt !== null) {
+        if (!keyboardFlight) updateStartHold(pose, now);
+        return;
+      }
 
       if (guideShownAt === null) {
         if (!personDetected || now - visitorDetectedAt < visitorDelay) return;
         guideShownAt = now;
         scene.classList.add('is-tracking');
-        setPoseStatus('양팔을 3초간 들어서 비행을 시작해보세요!');
+        setPoseStatus('');
       } else if (pose?.armsSpread && now - guideShownAt >= guideFadeDuration) {
         startCountdown(now);
       }
@@ -1182,6 +2149,7 @@
 
       event.preventDefault();
       if (event.repeat || flightHeight === 100 || returnReason === 'complete') return;
+      if (!experienceStarted && countdownEndsAt !== null) return;
       if (audioContext?.state !== 'running') enableSound();
 
       keyboardFlight = true;
@@ -1189,6 +2157,14 @@
 
       const now = performance.now();
       if (experienceStarted) {
+        if (updraftReadyAt !== null && !updraftClosed) {
+          detectBoost({ armsGathered: armsGatheredAt === null, armsSpread: armsGatheredAt !== null }, now);
+          return;
+        }
+        if (windChallenge?.clearedAt === null) {
+          windChallenge.keyboardBalance = true;
+          return;
+        }
         flapWithKeyboard();
         addLift(keyboardLift, now);
       } else if (countdownEndsAt === null) {
@@ -1217,7 +2193,7 @@
         resetVisitorGuide();
         const message = '동작 인식을 시작할 수 없어요. 인터넷 연결을 확인하고 새로고침해 주세요.';
         if (experienceStarted) {
-          flightStatus.textContent = '동작 인식이 어려워요. 스페이스바로 날아보세요.';
+          flightStatus.textContent = '동작을 인식하기 어려워요.';
         } else {
           setPoseStatus(message);
         }
@@ -1301,10 +2277,7 @@
 
     retry.addEventListener('click', startCamera);
     soundButton.hidden = !AudioEngine;
-    soundButton.addEventListener('click', enableSound);
-    flightWings[0].addEventListener('animationiteration', event => {
-      if (event.animationName === 'soar-wing') playWingWhoosh(.55);
-    });
+    scene.addEventListener('click', enableSound);
     document.addEventListener('keydown', handleFlightKey);
     setInterval(monitorVisitor, 100);
     startCamera();
