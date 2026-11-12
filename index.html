@@ -22,7 +22,7 @@
     }
 
     .scene {
-      --sky-image: url("image/idle-sky.png");
+      --sky-image: url("assets/idle-sky.png");
       position: relative;
       isolation: isolate;
       container-type: inline-size;
@@ -46,36 +46,21 @@
 
     .is-flying .flight-sky { display: block; }
 
-    .island-sky {
+    .solo-sky {
       position: absolute;
       z-index: -1;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0;
-      transform: scale(1.06);
-      transition: opacity .85s ease-out, transform 1.45s ease-out;
       pointer-events: none;
+      opacity: 0;
+      transform: scale(1.12);
+      transition: opacity .45s ease-out, transform 5s ease-out;
     }
 
-    .has-arrived .island-sky { opacity: 1; transform: scale(1); }
-
-    .landing-shadow {
-      position: absolute;
-      left: 50%;
-      top: 70%;
-      width: 9%;
-      height: 1.4%;
-      translate: -50% -50%;
-      border-radius: 50%;
-      background: #3e622c70;
-      filter: blur(.32cqw);
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .has-arrived .landing-shadow { opacity: 1; transition: opacity .45s ease-out .85s; }
+    .is-soaring .solo-sky { transform: scale(1); }
+    .is-sky-playing .solo-sky { opacity: 1; }
 
     .perch {
       position: absolute;
@@ -85,13 +70,11 @@
       animation: breeze 6s ease-in-out infinite;
     }
 
-    .branch, .chick, .feet-shadow { position: absolute; }
-
-    .branch { left: -3%; top: 41%; width: 70%; }
+    .chick, .feet-shadow { position: absolute; }
 
     .feet-shadow {
-      left: 47%;
-      top: 65.3%;
+      left: 25.5%;
+      top: 64.5%;
       width: 6%;
       height: 1.1%;
       border-radius: 50%;
@@ -100,8 +83,8 @@
     }
 
     .chick {
-      left: 42.4%;
-      bottom: 34.2%;
+      left: 21%;
+      bottom: 33.4%;
       width: 14%;
       transform-origin: 55% 98%;
       animation: look-around 9s ease-in-out infinite;
@@ -109,9 +92,18 @@
 
     .flight-bird, .flight-status { display: none; }
     .is-flying .perch, .is-flying .story { display: none; }
-    .is-tracking .chick { visibility: hidden; }
-    .is-tracking .flight-bird { display: block; }
     .is-flying .flight-bird, .is-flying .flight-status { display: block; }
+
+    .chick, .feet-shadow, .idle-dialogue, .perch .flight-bird,
+    .guide strong, .pose-instructions {
+      transition: opacity .65s ease, visibility 0s linear;
+    }
+
+    .is-tracking .chick, .is-tracking .feet-shadow, .is-tracking .idle-dialogue {
+      opacity: 0;
+      visibility: hidden;
+      transition-delay: 0s, .65s;
+    }
 
     .flight-bird {
       position: absolute;
@@ -120,21 +112,30 @@
     }
 
     .perch .flight-bird {
+      display: block;
       bottom: 34.2%;
       width: 26%;
       translate: -50% 0;
+      opacity: 0;
+      visibility: hidden;
+      transition-delay: 0s, .65s;
     }
 
+    .is-tracking .perch .flight-bird { opacity: 1; visibility: visible; transition-delay: 0s; }
+
     .is-flying .flight-bird {
-      top: 50%;
+      top: calc(50% + var(--fall-progress, 0) * 34%);
       width: 30%;
       translate: -50% -50%;
     }
 
-    .has-arrived .flight-bird {
-      top: 60%;
-      width: 24%;
-      transition: top 1.45s ease-in-out, width 1.45s ease-in-out;
+    .is-soaring .flight-bird {
+      animation: soar-glide 2.8s ease-in-out infinite;
+    }
+
+    @keyframes soar-glide {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-.65cqw); }
     }
 
     .flight-bird img {
@@ -151,12 +152,12 @@
         30.2% 72%, 29.8% 64%, 30% 54%, 30.5% 45%, 25% 38%);
     }
 
-    .flight-wing { transition: rotate 105ms ease-out; }
+    .flight-wing { transition: rotate 80ms ease-out; }
 
     .flight-wing-left {
       --wing-rotation: var(--left-arm-angle, -60deg);
       --glide-rotation: 8deg;
-      --landing-rotation: -42deg;
+      --downstroke-rotation: -18deg;
       rotate: var(--wing-rotation);
       transform-origin: 31.3% 57%;
       clip-path: polygon(0 35%, 29.6% 44%, 31.5% 48%, 34% 51%, 35% 57%,
@@ -166,28 +167,27 @@
     .flight-wing-right {
       --wing-rotation: calc(-1 * var(--right-arm-angle, -60deg));
       --glide-rotation: -8deg;
-      --landing-rotation: 42deg;
+      --downstroke-rotation: 18deg;
       rotate: var(--wing-rotation);
       transform-origin: 68.7% 57%;
       clip-path: polygon(100% 35%, 70.4% 44%, 68.5% 48%, 66% 51%, 65% 57%,
         67% 64%, 70.2% 72%, 100% 76%);
     }
 
-    .has-arrived .flight-wing {
-      rotate: var(--landing-rotation);
+    .is-soaring .flight-wing {
+      rotate: var(--glide-rotation);
       transition: none;
-      animation: land-wing 1.45s ease-in-out both;
+      animation: soar-wing 1.2s ease-in-out infinite;
     }
 
-    @keyframes land-wing {
-      0% { rotate: var(--wing-rotation); }
-      30%, 57% { rotate: var(--glide-rotation); }
-      100% { rotate: var(--landing-rotation); }
+    @keyframes soar-wing {
+      0%, 100% { rotate: calc(var(--glide-rotation) * 2.8); }
+      52% { rotate: var(--downstroke-rotation); }
     }
 
     .flight-status {
       position: absolute;
-      top: 72%;
+      top: 9%;
       left: 50%;
       translate: -50% 0;
       margin: 0;
@@ -199,7 +199,9 @@
       font-weight: 800;
     }
 
-    .has-arrived .flight-status { display: none; }
+    .is-soaring .flight-status, .is-soaring .flight-height,
+    .is-soaring .sound-button { display: none; }
+    .is-soaring .camera { opacity: 0; pointer-events: none; }
 
     .arrival-message {
       position: absolute;
@@ -222,13 +224,29 @@
       word-break: keep-all;
       opacity: 0;
       visibility: hidden;
+      transition: opacity .55s ease-out, visibility 0s linear .55s;
     }
 
-    .has-arrived .arrival-message {
+    .is-soaring .arrival-message {
       opacity: 1;
       visibility: visible;
-      transition: opacity .55s ease-out .45s;
+      transition-delay: 0s;
     }
+
+    .return-overlay {
+      position: absolute;
+      text-align: center;
+      color: #fffaf0;
+      text-shadow: 0 .12cqw .6cqw #17343a;
+      z-index: 5;
+      inset: 0;
+      display: grid;
+      place-content: center;
+      background: #17343ac4;
+    }
+
+    .return-overlay p { margin: 0; font-size: 2.2cqw; }
+    .return-overlay strong { font-size: 5cqw; }
 
     @keyframes breeze {
       0%, 100% { transform: rotate(-.65deg); }
@@ -258,12 +276,29 @@
       word-break: keep-all;
     }
 
-    .story > p {
-      margin: .75cqw 0 0;
-      font-size: 2.15cqw;
-      font-weight: 500;
+    .idle-dialogue {
+      position: absolute;
+      top: 33%;
+      left: 33%;
+      margin: 0;
+      padding: .65cqw 1.2cqw;
+      border-radius: 1.25cqw;
+      background: #fffaf0f5;
+      font-size: 2.05cqw;
+      font-weight: 700;
       letter-spacing: -.035em;
       line-height: 1.45;
+    }
+
+    .idle-dialogue::after {
+      content: "";
+      position: absolute;
+      top: calc(100% - 1px);
+      left: 1.3cqw;
+      width: 1.15cqw;
+      height: .7cqw;
+      background: inherit;
+      clip-path: polygon(0 0, 100% 0, 8% 100%);
     }
 
     .guide {
@@ -277,6 +312,7 @@
       background: #fffaf0e8;
       box-shadow: 0 .3cqw 1.3cqw #24485116;
       word-break: keep-all;
+      transition: background-color .65s ease, border-color .65s ease, box-shadow .65s ease;
     }
 
     .guide strong {
@@ -288,6 +324,19 @@
     .guide p { margin: .32cqw 0 0; font-size: 1.36cqw; }
     .guide .pose-status { color: #286256; font-weight: 700; }
     .pose-status:empty { display: none; }
+
+    .scene:not(.is-tracking) .guide {
+      border-color: transparent;
+      background-color: transparent;
+      box-shadow: none;
+    }
+
+    .scene:not(.is-tracking) .guide strong,
+    .scene:not(.is-tracking) .pose-instructions {
+      opacity: 0;
+      visibility: hidden;
+      transition-delay: 0s, .65s;
+    }
 
     .flight-height {
       position: absolute;
@@ -328,6 +377,8 @@
     progress::-moz-progress-bar { background: #398476; }
 
     .height-scale { display: none; }
+
+    .scene:not(.is-flying) .flight-height { display: none; }
 
     .is-flying .flight-height {
       top: 50%;
@@ -376,6 +427,7 @@
       color: #fffaf0;
       background: #173b42;
       box-shadow: 0 .55cqw 1.6cqw #12383b33;
+      transition: opacity .65s ease;
     }
 
     .camera video {
@@ -389,6 +441,11 @@
     }
 
     .camera.is-live video { visibility: visible; }
+
+    .scene:not(.is-tracking):not(.is-flying) .camera.is-live {
+      opacity: 0;
+      pointer-events: none;
+    }
 
     .camera-label {
       position: absolute;
@@ -455,36 +512,39 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .perch, .chick, .has-arrived .flight-wing { animation: none; }
-      .flight-wing, .island-sky, .has-arrived .flight-bird,
-      .has-arrived .landing-shadow, .has-arrived .arrival-message { transition: none; }
+      .perch, .chick, .is-soaring .flight-bird, .is-soaring .flight-wing { animation: none; }
+      .flight-wing, .solo-sky, .is-soaring .flight-bird, .arrival-message,
+      .chick, .feet-shadow, .idle-dialogue, .perch .flight-bird,
+      .guide, .guide strong, .pose-instructions, .camera { transition-duration: 0s; transition-delay: 0s; }
     }
   </style>
 </head>
 <body>
   <main class="scene" aria-labelledby="title">
     <div class="flight-sky" aria-hidden="true"></div>
-    <img class="island-sky" src="image/cloud-island.png" alt="">
-    <span class="landing-shadow" aria-hidden="true"></span>
+    <video class="solo-sky" src="image/sky.mp4" muted loop playsinline preload="auto" aria-hidden="true"></video>
     <div class="perch">
-      <img class="branch" src="image/idle-perch.png" alt="">
       <span class="feet-shadow" aria-hidden="true"></span>
-      <img class="chick" src="image/idle-chick.png" alt="나뭇가지 위에 앉아 하늘을 바라보는 아기새">
+      <img class="chick" src="assets/idle-chick.png" alt="나뭇가지 위에 앉아 하늘을 바라보는 아기새">
       <div class="flight-bird">
-        <img class="flight-wing flight-wing-left" src="image/chick-flight-front.png" alt="">
-        <img class="flight-wing flight-wing-right" src="image/chick-flight-front.png" alt="">
-        <img class="flight-body" src="image/chick-flight-front.png" alt="정면을 보고 날개를 움직이는 아기새">
+        <img class="flight-wing flight-wing-left" src="assets/chick-flight-front.png" alt="">
+        <img class="flight-wing flight-wing-right" src="assets/chick-flight-front.png" alt="">
+        <img class="flight-body" src="assets/chick-flight-front.png" alt="정면을 보고 날개를 움직이는 아기새">
       </div>
     </div>
     <p class="flight-status" role="status"></p>
     <p class="arrival-message" role="status"></p>
+    <div class="return-overlay" role="status" hidden>
+      <p>3초 뒤 대기화면으로 전환됩니다</p>
+      <strong class="return-count"></strong>
+    </div>
 
     <div class="story">
       <h1 id="title">아기새의 첫 비행</h1>
-      <p>“나도 하늘을 날고 싶어.”</p>
+      <p class="idle-dialogue">나도 하늘을 날고 싶어.</p>
       <div class="guide">
         <strong>양팔을 펼쳐 날개를 만들어주세요!</strong>
-        <p>화면 앞에 서서 양팔을 들어보세요.</p>
+        <p class="pose-instructions">화면 앞에 서서 양팔을 들어보세요.</p>
         <p id="pose-status" class="pose-status" role="status"></p>
       </div>
     </div>
@@ -524,16 +584,32 @@
     const status = cameraMessage.querySelector('[role="status"]');
     const retry = cameraMessage.querySelector('button');
     const flightBird = document.querySelector('.flight-bird');
+    const perch = document.querySelector('.perch');
+    const flightWings = [...flightBird.querySelectorAll('.flight-wing')];
+    const soloSky = document.querySelector('.solo-sky');
     const flightStatus = document.querySelector('.flight-status');
     const arrivalMessage = document.querySelector('.arrival-message');
     const poseStatus = document.querySelector('#pose-status');
     const heightGauge = document.querySelector('#height');
     const heightValue = document.querySelector('.height-value');
     const soundButton = document.querySelector('.sound-button');
+    const returnOverlay = document.querySelector('.return-overlay');
+    const returnCount = document.querySelector('.return-count');
     const AudioEngine = window.AudioContext ?? window.webkitAudioContext;
     const holdDuration = 3000;
+    const visitorDelay = 2000;
+    const detectionGrace = 500;
+    const visitorAbsenceGrace = 1200;
+    const guideFadeDuration = 650;
+    const keyboardLift = 7.5;
+    const floorHeight = -24;
+    const soloFlightDuration = 5000;
+    const returnDuration = 3000;
     const mediaPipeUrl = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21';
     let countdownEndsAt = null;
+    let visitorDetectedAt = null;
+    let lastVisitorSeenAt = -Infinity;
+    let guideShownAt = null;
     let experienceStarted = false;
     let poseLandmarkerPromise;
     let poseFrame;
@@ -543,6 +619,15 @@
     let lastFlightFrame = 0;
     let flightHeight = 0;
     let pendingLift = 0;
+    let keyboardWingAnimations = [];
+    let flightFrame;
+    let countdownFrame;
+    let soloTimer;
+    let flightIntroTimer;
+    let returnEndsAt = null;
+    let returnReason = null;
+    let waitForVisitorToLeave = false;
+    let keyboardFlight = false;
 
     async function enableSound() {
       try {
@@ -585,8 +670,8 @@
       if (poseStatus.textContent !== message) poseStatus.textContent = message;
     }
 
-    function jointIsVisible(joint) {
-      return joint && joint.visibility >= .55 &&
+    function jointIsVisible(joint, minimumVisibility = .55) {
+      return joint && joint.visibility >= minimumVisibility &&
         joint.x >= 0 && joint.x <= 1 && joint.y >= 0 && joint.y <= 1;
     }
 
@@ -629,14 +714,34 @@
 
     function updateArmTracking(pose) {
       function setWingAngle(property, angle) {
+        if (angle == null && !experienceStarted) return;
         const nextAngle = Math.min(60, Math.max(-60, angle ?? -60));
         const previousAngle = parseFloat(flightBird.style.getPropertyValue(property));
-        if ((experienceStarted || countdownEndsAt !== null) && Math.abs(nextAngle - previousAngle) < 3) return;
+        if (Math.abs(nextAngle - previousAngle) < 3) return;
         flightBird.style.setProperty(property, `${nextAngle}deg`);
       }
 
       setWingAngle('--left-arm-angle', pose?.screenLeft.angle);
       setWingAngle('--right-arm-angle', pose?.screenRight.angle);
+    }
+
+    function addLift(lift, now) {
+      pendingLift = Math.min(100 - flightHeight, pendingLift + lift);
+      lastFlapAt = now;
+    }
+
+    function flapWithKeyboard() {
+      keyboardWingAnimations.forEach(animation => animation.cancel());
+      keyboardWingAnimations = flightWings.map((wing, index) => {
+        const direction = index === 0 ? 1 : -1;
+        const restingAngle = getComputedStyle(wing).rotate;
+        return wing.animate([
+          { rotate: restingAngle },
+          { rotate: `${36 * direction}deg`, offset: .28 },
+          { rotate: `${-48 * direction}deg`, offset: .65 },
+          { rotate: restingAngle }
+        ], { duration: 420, easing: 'ease-in-out' });
+      });
     }
 
     function detectFlap(pose, now) {
@@ -673,10 +778,94 @@
         const sweep = Math.min(raisedStroke.leftPeak - downstroke.leftLow, raisedStroke.rightPeak - downstroke.rightLow);
         if (sweep >= 38) {
           const lift = 6.2 + Math.min(2.6, (sweep - 38) * .05);
-          pendingLift = Math.min(100 - flightHeight, pendingLift + lift);
-          lastFlapAt = now;
+          addLift(lift, now);
         }
         raisedStroke = null;
+      }
+    }
+
+    async function startSoloFlight() {
+      arrivalMessage.textContent = '해냈어! 드디어 하늘을 날 수 있어!';
+      scene.classList.add('is-soaring');
+      soloTimer = setTimeout(() => startReturn('complete', performance.now()), soloFlightDuration);
+
+      try {
+        await soloSky.play();
+        if (scene.classList.contains('is-soaring')) scene.classList.add('is-sky-playing');
+      } catch (error) {
+        console.warn('하늘 영상을 재생할 수 없어요.', error);
+      }
+    }
+
+    function startReturn(reason, now) {
+      if (returnReason !== null) {
+        if (reason === 'complete') returnReason = reason;
+        return;
+      }
+      returnReason = reason;
+      returnEndsAt = now + returnDuration;
+      returnCount.textContent = '3';
+      returnOverlay.hidden = false;
+    }
+
+    function clearReturn() {
+      returnReason = null;
+      returnEndsAt = null;
+      returnOverlay.hidden = true;
+    }
+
+    function markVisitorSeen(now) {
+      lastVisitorSeenAt = Math.max(lastVisitorSeenAt, now);
+      if (returnReason === 'away') clearReturn();
+    }
+
+    function resetExperience(now) {
+      waitForVisitorToLeave = returnReason === 'complete' && now - lastVisitorSeenAt < visitorAbsenceGrace;
+      clearReturn();
+      clearTimeout(soloTimer);
+      clearTimeout(flightIntroTimer);
+      cancelAnimationFrame(flightFrame);
+      cancelAnimationFrame(countdownFrame);
+      keyboardWingAnimations.forEach(animation => animation.cancel());
+      keyboardWingAnimations = [];
+      soloSky.pause();
+      if (soloSky.readyState > 0) soloSky.currentTime = 0;
+      experienceStarted = false;
+      keyboardFlight = false;
+      countdownEndsAt = null;
+      visitorDetectedAt = null;
+      guideShownAt = null;
+      lastVisitorSeenAt = waitForVisitorToLeave ? now : -Infinity;
+      pendingLift = 0;
+      raisedStroke = null;
+      lastFlapAt = -Infinity;
+      flightHeight = 0;
+      heightGauge.value = 0;
+      heightValue.textContent = '0%';
+      flightStatus.textContent = '';
+      arrivalMessage.textContent = '';
+      setPoseStatus('');
+      scene.style.removeProperty('--flight-progress');
+      scene.style.removeProperty('--fall-progress');
+      flightBird.style.removeProperty('--left-arm-angle');
+      flightBird.style.removeProperty('--right-arm-angle');
+      scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-sky-playing');
+      perch.append(flightBird);
+    }
+
+    function monitorVisitor() {
+      const now = performance.now();
+      const active = experienceStarted || countdownEndsAt !== null || guideShownAt !== null;
+      if (!returnReason && !keyboardFlight && active && Number.isFinite(lastVisitorSeenAt) &&
+          now - lastVisitorSeenAt >= visitorAbsenceGrace) startReturn('away', now);
+
+      if (returnEndsAt === null) return;
+      const remaining = returnEndsAt - now;
+      if (remaining <= 0) {
+        resetExperience(now);
+      } else {
+        const count = String(Math.ceil(remaining / 1000));
+        if (returnCount.textContent !== count) returnCount.textContent = count;
       }
     }
 
@@ -686,33 +875,43 @@
 
       const lift = Math.min(pendingLift, 17 * seconds);
       pendingLift -= lift;
-      const descent = now - lastFlapAt >= 1100 ? 4.5 * seconds : 0;
-      const height = Math.max(0, flightHeight + lift - descent);
+      const fallProgress = Math.max(0, flightHeight / floorHeight);
+      const descent = now - lastFlapAt >= 1100 ? (4.5 + 10 * fallProgress) * seconds : 0;
+      const height = Math.max(floorHeight, flightHeight + lift - descent);
       const nextHeight = height >= 100 - .000001 ? 100 : height;
 
       if (nextHeight !== flightHeight) {
-        heightGauge.value = nextHeight;
-        if (Math.floor(nextHeight) !== Math.floor(flightHeight)) {
-          heightValue.textContent = `${Math.floor(nextHeight)}%`;
+        const gaugeHeight = Math.max(0, nextHeight);
+        heightGauge.value = gaugeHeight;
+        if (Math.floor(gaugeHeight) !== Math.floor(Math.max(0, flightHeight))) {
+          heightValue.textContent = `${Math.floor(gaugeHeight)}%`;
         }
         flightHeight = nextHeight;
-        scene.style.setProperty('--flight-progress', flightHeight / 100);
+        scene.style.setProperty('--flight-progress', gaugeHeight / 100);
+        scene.style.setProperty('--fall-progress', Math.max(0, flightHeight / floorHeight));
       }
 
       if (flightHeight === 100) {
-        scene.classList.add('has-arrived');
-        arrivalMessage.textContent = '해냈어! 드디어 하늘을 날 수 있어!';
+        keyboardWingAnimations.forEach(animation => animation.cancel());
+        startSoloFlight();
         return;
       }
 
-      requestAnimationFrame(animateFlight);
+      flightFrame = requestAnimationFrame(animateFlight);
+    }
+
+    function startCountdown(now) {
+      waitForVisitorToLeave = false;
+      scene.classList.add('is-tracking');
+      countdownEndsAt = now + holdDuration;
+      tickStartCountdown(now);
     }
 
     function tickStartCountdown(now) {
       const remaining = countdownEndsAt - now;
       if (remaining > 0) {
         setPoseStatus(String(Math.ceil(remaining / 1000)));
-        requestAnimationFrame(tickStartCountdown);
+        countdownFrame = requestAnimationFrame(tickStartCountdown);
         return;
       }
 
@@ -724,37 +923,79 @@
       setPoseStatus('');
       flightStatus.textContent = '체험 시작!';
       playStartChime();
+      lastFlapAt = now;
       lastFlightFrame = now;
-      requestAnimationFrame(animateFlight);
-      setTimeout(() => {
+      flightFrame = requestAnimationFrame(animateFlight);
+      flightIntroTimer = setTimeout(() => {
         if (flightStatus.textContent === '체험 시작!') {
-          flightStatus.textContent = '양팔을 위아래로 움직여 날아보세요.';
+          flightStatus.textContent = '양팔을 위아래로 움직이거나 스페이스바를 눌러 날아보세요.';
         }
       }, 1300);
     }
 
-    function updateTrackedPose(landmarks, now) {
-      if (flightHeight === 100) return;
+    function resetVisitorGuide() {
+      if (experienceStarted || countdownEndsAt !== null || guideShownAt !== null) return;
+      visitorDetectedAt = null;
+      lastVisitorSeenAt = -Infinity;
+      guideShownAt = null;
+      scene.classList.remove('is-tracking');
+      setPoseStatus('');
+    }
 
-      // Check the face and torso independently of the arm position.
+    function updateTrackedPose(landmarks, now) {
+      // Presence can use partially visible face and torso points while the arms move.
       const personDetected = landmarks != null &&
-        [0, 11, 12, 23, 24].filter(index => jointIsVisible(landmarks[index])).length >= 2;
+        [0, 2, 5, 11, 12, 23, 24].filter(index => jointIsVisible(landmarks[index], .45)).length >= 2;
+
+      if (waitForVisitorToLeave) {
+        if (personDetected) lastVisitorSeenAt = now;
+        if (now - lastVisitorSeenAt < visitorAbsenceGrace) return;
+        waitForVisitorToLeave = false;
+        lastVisitorSeenAt = -Infinity;
+      }
+
+      if (personDetected) {
+        if (now - lastVisitorSeenAt > detectionGrace) visitorDetectedAt = now;
+        markVisitorSeen(now);
+      }
+
+      if (flightHeight === 100) return;
       const pose = personDetected ? readArmPose(landmarks, video.videoWidth / video.videoHeight) : null;
 
-      if (personDetected || experienceStarted) updateArmTracking(pose);
+      if (pose || experienceStarted) updateArmTracking(pose);
       if (experienceStarted) {
         detectFlap(pose, now);
         return;
       }
 
-      scene.classList.toggle('is-tracking', personDetected || countdownEndsAt !== null);
       if (countdownEndsAt !== null) return;
 
-      if (pose?.armsSpread) {
-        countdownEndsAt = now + holdDuration;
-        tickStartCountdown(now);
-      } else {
-        setPoseStatus(personDetected ? '양팔을 3초간 들어서 비행을 시작해보세요!' : '');
+      if (guideShownAt === null) {
+        if (!personDetected || now - visitorDetectedAt < visitorDelay) return;
+        guideShownAt = now;
+        scene.classList.add('is-tracking');
+        setPoseStatus('양팔을 3초간 들어서 비행을 시작해보세요!');
+      } else if (pose?.armsSpread && now - guideShownAt >= guideFadeDuration) {
+        startCountdown(now);
+      }
+    }
+
+    function handleFlightKey(event) {
+      if (event.code !== 'Space' || event.altKey || event.ctrlKey || event.metaKey ||
+          event.target.closest?.('button, input, select, textarea, [contenteditable]')) return;
+
+      event.preventDefault();
+      if (event.repeat || flightHeight === 100 || returnReason === 'complete') return;
+
+      keyboardFlight = true;
+      if (returnReason === 'away') clearReturn();
+
+      const now = performance.now();
+      if (experienceStarted) {
+        flapWithKeyboard();
+        addLift(keyboardLift, now);
+      } else if (countdownEndsAt === null) {
+        startCountdown(now);
       }
     }
 
@@ -771,15 +1012,15 @@
     }
 
     async function startPoseTracking(stream) {
-      if (flightHeight === 100) return;
       if (!experienceStarted && countdownEndsAt === null) setPoseStatus('동작 인식을 준비하고 있어요.');
 
       function showPoseError(error) {
         console.error('동작 인식 오류', error);
         updateTrackedPose(null, performance.now());
+        resetVisitorGuide();
         const message = '동작 인식을 시작할 수 없어요. 인터넷 연결을 확인하고 새로고침해 주세요.';
         if (experienceStarted) {
-          flightStatus.textContent = message;
+          flightStatus.textContent = '동작 인식이 어려워요. 스페이스바로 날아보세요.';
         } else {
           setPoseStatus(message);
         }
@@ -794,9 +1035,9 @@
         let lastDetection = -Infinity;
 
         function trackPose(now) {
-          if (video.srcObject !== stream || flightHeight === 100) return;
+          if (video.srcObject !== stream) return;
 
-          if (now - lastDetection >= 65) {
+          if (now - lastDetection >= (flightHeight === 100 ? 240 : 65)) {
             if (now - lastDetection > 450) raisedStroke = null;
             lastDetection = now;
             try {
@@ -843,6 +1084,7 @@
           if (poseFrame !== undefined) video.cancelVideoFrameCallback(poseFrame);
           video.srcObject = null;
           updateTrackedPose(null, performance.now());
+          resetVisitorGuide();
           showCameraMessage('카메라 연결이 끊어졌어요.', true);
         }, { once: true });
         startPoseTracking(stream);
@@ -863,6 +1105,8 @@
     retry.addEventListener('click', startCamera);
     soundButton.hidden = !AudioEngine;
     soundButton.addEventListener('click', enableSound);
+    document.addEventListener('keydown', handleFlightKey);
+    setInterval(monitorVisitor, 100);
     startCamera();
   </script>
 </body>
