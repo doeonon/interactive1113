@@ -223,7 +223,6 @@
     .is-falling.is-slumped .flight-bird { transform: translateY(1.6cqw) rotate(-5deg) scale(.92, .76); }
     .is-climbing .flight-bird { transform: translateY(-.55cqw) scale(1.025); }
     .is-flight-waiting .flight-bird { animation: waiting-sway 2s ease-in-out infinite; }
-    .is-flight-waiting .flight-sprite { animation: flap .85s ease-in-out infinite; }
     @keyframes waiting-sway {
       0%, 100% { rotate: -2.5deg; }
       50% { rotate: 2.5deg; }
@@ -233,14 +232,9 @@
       animation: doze-breath 1.15s ease-in-out infinite;
     }
     .is-waking .flight-bird { transform: translateY(-.75cqw) rotate(-5deg) scale(1.04); }
-    .is-demonstrating .flight-sprite { animation: flap .72s ease-in-out 2; }
 
     @keyframes doze-breath {
       50% { scale: 1 .96; }
-    }
-
-    @keyframes flap {
-      50% { scale: 1.04 .93; }
     }
 
     .rest-message {
@@ -404,14 +398,13 @@
     }
 
     .flight-sprite {
-      --bird-tilt: clamp(-8deg, (var(--left-arm-angle, 0deg) - var(--right-arm-angle, 0deg)) * .12, 8deg);
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
-      rotate: var(--bird-tilt);
-      transition: rotate 120ms ease-out;
     }
+
+    canvas.flight-sprite:not([hidden]) + img { visibility: hidden; }
 
     .flight-status {
       position: absolute;
@@ -501,7 +494,6 @@
         rotate(var(--wind-tilt, 0deg)) scale(var(--wind-scale, 1.025));
       transition: transform .13s ease-out;
     }
-    .is-wind-challenge .flight-sprite { transition-duration: .32s; }
     .wind-bird-guide {
       position: absolute;
       top: 50%;
@@ -525,7 +517,6 @@
     }
     .is-wind-challenge .wind-bird-guide { opacity: .58; }
     .is-wind-balanced .wind-bird-guide { color: #aff6bc; }
-    .is-wind-gliding .flight-sprite, .is-soaring .flight-sprite { rotate: 0deg; }
     .is-boosting .flight-bird, .is-boost-gliding .flight-bird {
       transform: translateY(calc(-3cqw * var(--boost-fade, 1))) scale(1.02);
     }
@@ -537,9 +528,6 @@
       ) rotate(calc(var(--wind-tilt, 0deg) * var(--wind-exit-remaining)))
         scale(calc(1 + (var(--wind-scale, 1) - 1) * var(--wind-exit-remaining)));
       transition-duration: .13s;
-    }
-    .is-wind-cleared.is-wind-gliding .flight-sprite {
-      rotate: calc(var(--bird-tilt) * var(--wind-exit-blend, 0));
     }
 
     .is-soaring .flight-status, .is-soaring .flight-height { display: none; }
@@ -918,12 +906,12 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .perch, .chick, .is-flight-waiting .flight-bird, .is-flight-waiting .flight-sprite,
+      .perch, .chick, .is-flight-waiting .flight-bird,
       .is-flying.is-soaring .flight-bird { animation: none; }
       .bird-sweat, .bird-tear, .wing-ripple { animation: none; }
       .flight-warning, .climb-effects, .fall-effects { transition: none; }
       .is-low-warning .flight-warning { animation: none; }
-      .is-dozing .flight-bird, .is-demonstrating .flight-sprite { animation: none; }
+      .is-dozing .flight-bird { animation: none; }
       .rest-message { transition: none; }
       .is-boosting .boost-streaks, .is-boost-gliding .boost-streaks { display: none; }
       .is-boosting .rainbow-trail, .is-boost-gliding .rainbow-trail { animation: none; }
@@ -932,8 +920,7 @@
       .is-in-cloud .cloud-passage::after { animation: none; }
       .is-wind-challenge .flight-bird { transform: none; }
       .is-wind-cleared.is-wind-gliding .flight-bird { transform: none; transition-duration: 0s; }
-      .is-wind-challenge .flight-sprite { transition-duration: 0s; }
-      .flight-sprite, .arrival-message,
+      .arrival-message,
       .chick, .idle-dialogue, .flight-bird,
       .guide, .guide strong, .pose-instructions, .camera { transition-duration: 0s; transition-delay: 0s; }
     }
@@ -1058,6 +1045,7 @@
           <span class="wing-ripple"></span>
           <span class="wing-ripple"></span>
         </div>
+        <canvas class="flight-sprite" width="384" height="288" role="img" aria-label="눈을 뜨고 날개를 퍼덕이는 아기새" hidden></canvas>
         <img class="flight-sprite" src="assets/design-experiment/bird_open.png" alt="눈을 뜨고 날개를 펼친 아기새">
         <div class="fall-effects">
           <span class="fall-cry">으아아…!</span>
@@ -1151,7 +1139,14 @@
     const climbCry = flightBird.querySelector('.climb-cry');
     const wishDelay = 1500;
     const perch = document.querySelector('.perch');
-    const flightSprite = flightBird.querySelector('.flight-sprite');
+    const flightSprite = flightBird.querySelector('img.flight-sprite');
+    const wingCanvas = flightBird.querySelector('canvas.flight-sprite');
+    const wingContext = wingCanvas.getContext('2d');
+    const wingSource = document.createElement('canvas');
+    wingSource.width = wingCanvas.width;
+    wingSource.height = wingCanvas.height;
+    const wingSourceContext = wingSource.getContext('2d');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
     const flightStatus = document.querySelector('.flight-status');
     const windMessage = document.querySelector('.wind-instruction');
     const windCount = document.querySelector('.wind-count');
@@ -1231,7 +1226,12 @@
     let boostRecoveryUntil = 0;
     let armsGatheredAt = null;
     let gatherPoseHeld = false;
-    let keyboardFlapAnimation = null;
+    let keyboardFlapAt = -Infinity;
+    let leftWingTarget = 0;
+    let rightWingTarget = 0;
+    let leftWingBend = 0;
+    let rightWingBend = 0;
+    let wingSourceReady = false;
     let flightFrame;
     let countdownFrame;
     let soloTimer;
@@ -1455,16 +1455,8 @@
     }
 
     function updateArmTracking(pose) {
-      function setWingAngle(property, angle) {
-        if (angle == null && !experienceStarted) return;
-        const nextAngle = Math.min(60, Math.max(-60, angle ?? -60));
-        const previousAngle = parseFloat(flightBird.style.getPropertyValue(property));
-        if (Math.abs(nextAngle - previousAngle) < 3) return;
-        flightBird.style.setProperty(property, `${nextAngle}deg`);
-      }
-
-      setWingAngle('--left-arm-angle', pose?.screenLeft.angle);
-      setWingAngle('--right-arm-angle', pose?.screenRight.angle);
+      leftWingTarget = Math.max(-1, Math.min(1, (pose?.screenLeft.angle ?? 0) / 60));
+      rightWingTarget = Math.max(-1, Math.min(1, (pose?.screenRight.angle ?? 0) / 60));
     }
 
     function showCameraPoseFeedback(pose) {
@@ -1598,14 +1590,55 @@
       if (text && text !== restMessage.textContent) restMessage.textContent = text;
     }
 
-    function flapWithKeyboard() {
-      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      keyboardFlapAnimation?.cancel();
-      keyboardFlapAnimation = flightSprite.animate([
-        { scale: '1' },
-        { scale: '1.04 .93', offset: .4 },
-        { scale: '1' }
-      ], { duration: 420, easing: 'ease-in-out' });
+    function renderFlightWings(now, seconds) {
+      if (!wingContext || !wingSourceContext || !flightSprite.naturalWidth || reducedMotion.matches) {
+        wingCanvas.hidden = true;
+        return;
+      }
+
+      const { width, height } = wingCanvas;
+      if (!wingSourceReady) {
+        wingSourceContext.drawImage(flightSprite, 0, 0, width, height);
+        wingSourceReady = true;
+      }
+
+      const keyboardProgress = (now - keyboardFlapAt) / 460;
+      const demoElapsed = restingSince === null ? -1 : now - restingSince - 2900;
+      const isGliding = scene.classList.contains('is-wind-gliding');
+      let left = isGliding ? 0 : leftWingTarget;
+      let right = isGliding ? 0 : rightWingTarget;
+      if (keyboardProgress >= 0 && keyboardProgress < 1) {
+        left = right = Math.sin(keyboardProgress * Math.PI * 2) * .9;
+      } else if (demoElapsed >= 0 && demoElapsed < 1440 && Math.max(Math.abs(left), Math.abs(right)) < .25) {
+        left = right = Math.sin(demoElapsed / 720 * Math.PI * 2) * .55;
+      }
+
+      // Ease each wing independently. The face and the roots of both wings stay in place.
+      const blend = 1 - Math.exp(-seconds / .065);
+      leftWingBend += (left - leftWingBend) * blend;
+      rightWingBend += (right - rightWingBend) * blend;
+      if (Math.max(Math.abs(leftWingBend), Math.abs(rightWingBend)) < .01) {
+        wingCanvas.hidden = true;
+        return;
+      }
+
+      const bodyStart = Math.round(width * .36);
+      const bodyEnd = Math.round(width * .64);
+      wingContext.clearRect(0, 0, width, height);
+      wingContext.drawImage(wingSource, bodyStart, 0, bodyEnd - bodyStart, height,
+        bodyStart, 0, bodyEnd - bodyStart, height);
+
+      // Keep each column at its original x so adjacent columns always meet.
+      for (let x = 0; x < width; x += 1) {
+        if (x >= bodyStart && x < bodyEnd) continue;
+        const isLeft = x < bodyStart;
+        const distance = isLeft ? bodyStart - x : x - bodyEnd;
+        const progress = Math.min(1, distance / (width * .26));
+        const curve = progress * progress * (3 - 2 * progress);
+        const bend = isLeft ? leftWingBend : rightWingBend;
+        wingContext.drawImage(wingSource, x, 0, 1, height, x, -bend * curve * height * .15, 1, height);
+      }
+      wingCanvas.hidden = false;
     }
 
     function detectFlap(pose, now) {
@@ -1686,8 +1719,10 @@
       cancelAnimationFrame(flightFrame);
       cancelAnimationFrame(countdownFrame);
       stopFlightWind();
-      keyboardFlapAnimation?.cancel();
-      keyboardFlapAnimation = null;
+      keyboardFlapAt = -Infinity;
+      leftWingTarget = rightWingTarget = 0;
+      leftWingBend = rightWingBend = 0;
+      wingCanvas.hidden = true;
       experienceStarted = false;
       keyboardFlight = false;
       isFirstTakeoff = false;
@@ -1745,8 +1780,6 @@
       scene.style.removeProperty('--wind-scale');
       scene.style.removeProperty('--wind-exit-blend');
       scene.style.removeProperty('--boost-fade');
-      flightBird.style.removeProperty('--left-arm-angle');
-      flightBird.style.removeProperty('--right-arm-angle');
       scene.classList.remove('is-tracking', 'is-flying', 'is-soaring', 'is-falling', 'is-boosting', 'is-boost-gliding');
       scene.classList.remove('is-climbing', 'is-low-warning', 'is-boost-ready', 'is-counting-down', 'is-slumped', 'is-at-ground');
       scene.classList.remove('is-wind-challenge', 'is-wind-balanced', 'is-wind-gliding', 'is-wind-cleared', 'is-in-cloud', 'is-updraft-preparing');
@@ -1772,6 +1805,7 @@
     function animateFlight(now) {
       const seconds = Math.min(.05, Math.max(0, (now - lastFlightFrame) / 1000));
       lastFlightFrame = now;
+      if (flightHeight > 0) renderFlightWings(now, seconds);
 
       if (windChallenge?.clearedAt === null) {
         updateWindChallenge(now, seconds);
@@ -1933,8 +1967,7 @@
       }
 
       if (flightHeight === 100) {
-        keyboardFlapAnimation?.cancel();
-        keyboardFlapAnimation = null;
+        wingCanvas.hidden = true;
         startSoloFlight();
         return;
       }
@@ -2076,7 +2109,7 @@
           windChallenge.keyboardBalance = true;
           return;
         }
-        flapWithKeyboard();
+        keyboardFlapAt = now;
         addLift(keyboardLift, now);
       } else if (countdownEndsAt === null) {
         startCountdown(now);
