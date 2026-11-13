@@ -1127,7 +1127,7 @@
     <p class="flight-status boost-message" role="status">상승기류를 타고 올라가요!</p>
     <p class="flight-status boost-guide" role="status">
       <strong class="updraft-title">잠깐! 상승기류를 만났어요!</strong>
-      <span class="updraft-instruction">양팔을 가슴 앞에 모았다가 활짝 펼쳐보세요!</span>
+      <span class="updraft-instruction">양팔을 활짝 펼쳐 주세요.</span>
     </p>
     <p class="arrival-message" role="status"></p>
     <p class="fall-cry ground-dialogue" role="status">나 여기 있어요!</p>
@@ -1246,6 +1246,7 @@
     const balanceDuration = 3;
     const windPassAfter = 5000;
     const updraftPreparation = 3000;
+    const updraftAttemptTime = 2500;
     const cloudStart = 30;
     const cloudEnd = 40;
     const manualClimbSpeed = 26;
@@ -1293,8 +1294,6 @@
     let windChallenge = null;
     let climbStrokes = 0;
     let boostRecoveryUntil = 0;
-    let armsGatheredAt = null;
-    let gatherPoseHeld = false;
     let keyboardFlapAt = -Infinity;
     let leftWingTarget = 0;
     let rightWingTarget = 0;
@@ -1492,27 +1491,13 @@
       return !updraftClosed && !boostActive && flightHeight >= boostStart && flightHeight <= boostWindowEnd;
     }
 
-    function showUpdraftStep(armsGathered) {
-      updraftTitle.textContent = armsGathered ? '좋아요!' : '지금!';
-      updraftInstruction.textContent = armsGathered ? '이제 양팔을 활짝 펼쳐요!' : '양팔을 가슴 앞으로 모아주세요!';
+    function detectBoost(pose, now) {
+      if (pose?.armsSpread && updraftReadyAt !== null && now >= updraftReadyAt && canStartBoost()) {
+        startBoost(now);
+      }
     }
 
-    function detectBoost(pose, now) {
-      if (!canStartBoost() || updraftReadyAt === null || scene.classList.contains('is-updraft-preparing')) return;
-      if (armsGatheredAt !== null && now - armsGatheredAt > 2000) {
-        armsGatheredAt = null;
-        showUpdraftStep(false);
-        updraftTitle.textContent = '다시 해볼까요?';
-      }
-      if (!pose) return;
-
-      if (pose.armsGathered && !gatherPoseHeld && armsGatheredAt === null) {
-        armsGatheredAt = now;
-        showUpdraftStep(true);
-      }
-      gatherPoseHeld = pose.armsGathered;
-      if (armsGatheredAt === null || !pose.armsSpread) return;
-
+    function startBoost(now) {
       boostActive = true;
       boostStartedAt = now;
       updraftClosed = true;
@@ -1785,8 +1770,6 @@
       windChallenge = null;
       climbStrokes = 0;
       boostRecoveryUntil = 0;
-      armsGatheredAt = null;
-      gatherPoseHeld = false;
       raisedStroke = null;
       lastFlapAt = -Infinity;
       flightHeight = 0;
@@ -1802,7 +1785,7 @@
       windMessage.textContent = '';
       windCount.textContent = '';
       updraftTitle.textContent = '잠깐! 상승기류를 만났어요!';
-      updraftInstruction.textContent = '양팔을 가슴 앞에 모았다가 활짝 펼쳐보세요!';
+      updraftInstruction.textContent = '양팔을 활짝 펼쳐 주세요.';
       updateRestAnimation(now, false);
       heightGauge.value = 0;
       heightTrack.style.removeProperty('--height-position');
@@ -1866,7 +1849,16 @@
       }
       if (scene.classList.contains('is-updraft-preparing')) {
         scene.classList.remove('is-updraft-preparing');
-        showUpdraftStep(false);
+        updraftTitle.textContent = '지금!';
+      }
+
+      if (updraftReadyAt !== null && canStartBoost()) {
+        const elapsed = now - updraftReadyAt;
+        if (elapsed >= 2 * updraftAttemptTime) {
+          startBoost(now);
+        } else if (elapsed >= updraftAttemptTime && updraftTitle.textContent !== '한 번 더!') {
+          updraftTitle.textContent = '한 번 더!';
+        }
       }
 
       const isBoosting = boostActive;
@@ -1995,13 +1987,6 @@
         lastFlapAt = now;
         boostRecoveryUntil = now + boostGlideDuration + boostHandoffHold;
       }
-      if (!canStartBoost()) {
-        gatherPoseHeld = false;
-        if (armsGatheredAt !== null) {
-          armsGatheredAt = null;
-          showUpdraftStep(false);
-        }
-      }
       scene.classList.toggle('is-boost-ready', canStartBoost());
 
       if (!windChallenge && flightHeight === windHeight) startWindChallenge(now);
@@ -2009,7 +1994,6 @@
         updraftReadyAt = now + updraftPreparation;
         pendingLift = 0;
         raisedStroke = null;
-        armsGatheredAt = null;
         scene.classList.remove('is-climbing');
         scene.classList.add('is-updraft-preparing');
         updateFlightWind(0);
@@ -2231,7 +2215,7 @@
       const now = performance.now();
       if (experienceStarted) {
         if (updraftReadyAt !== null && !updraftClosed) {
-          detectBoost({ armsGathered: armsGatheredAt === null, armsSpread: armsGatheredAt !== null }, now);
+          detectBoost({ armsSpread: true }, now);
           return;
         }
         if (windChallenge?.clearedAt === null) {
