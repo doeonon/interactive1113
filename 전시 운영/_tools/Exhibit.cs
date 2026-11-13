@@ -71,10 +71,7 @@ internal static class Exhibit
 
     private static void Start()
     {
-        var operationFolder = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-        var page = Path.Combine(operationFolder.Parent.FullName + "_image-redesign", "index.html");
-        if (!File.Exists(page))
-            throw new FileNotFoundException("이미지 리디자인 버전의 index.html을 찾을 수 없습니다.\n" + page);
+        const string page = "https://doeonon.github.io/interactive1113/redesign/";
 
         var locations = new[] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
@@ -86,7 +83,7 @@ internal static class Exhibit
         Directory.CreateDirectory(Profile);
         var arguments = "--user-data-dir=\"" + Profile + "\" " +
             "--no-first-run --no-default-browser-check --disable-background-mode --start-fullscreen " +
-            new Uri(page).AbsoluteUri;
+            page;
         using (var browser = Process.Start(new ProcessStartInfo(chrome, arguments)))
         {
             File.WriteAllLines(StateFile, new[] { browser.Id.ToString(),
