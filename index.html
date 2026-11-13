@@ -630,6 +630,7 @@
       text-shadow: 0 .1cqw .25cqw #142e3f, 0 0 .9cqw #142e3f;
     }
     .is-soaring:has(.return-overlay:not([hidden])) .arrival-message { visibility: hidden; }
+    .is-soaring:has(.return-overlay:not([hidden])) .flight-bird { display: none; }
 
     .timer-clock, .height-value, .height-scale {
       font-family: "Gaegu", "Segoe Print", "Gungsuh", cursive;
@@ -1093,7 +1094,7 @@
 <body>
   <main class="scene" aria-labelledby="title">
     <div class="flight-sky" aria-hidden="true"></div>
-    <video class="solo-sky" src="image/sky.mp4" muted loop playsinline preload="auto" aria-hidden="true"></video>
+    <video class="solo-sky" src="assets/design-experiment/re_sky.mp4" muted loop playsinline preload="auto" aria-hidden="true"></video>
     <div class="ascent-dust" aria-hidden="true"></div>
     <div class="boost-streaks" aria-hidden="true"></div>
     <div class="wind-clouds" aria-hidden="true"></div>
@@ -1516,10 +1517,8 @@
     }
 
     function updateArmTracking(pose) {
-      const left = Math.max(-1, Math.min(1, (pose?.screenLeft.angle ?? 0) / 60));
-      const right = Math.max(-1, Math.min(1, (pose?.screenRight.angle ?? 0) / 60));
-      if (!pose || Math.abs(left - leftWingTarget) >= .1) leftWingTarget = left;
-      if (!pose || Math.abs(right - rightWingTarget) >= .1) rightWingTarget = right;
+      leftWingTarget = Math.max(-1, Math.min(1, (pose?.screenLeft.angle ?? 0) / 75));
+      rightWingTarget = Math.max(-1, Math.min(1, (pose?.screenRight.angle ?? 0) / 75));
     }
 
     function addLift(lift, now, strength = 1) {
@@ -1619,8 +1618,9 @@
       }
 
       // Ease each wing independently. The face and the roots of both wings stay in place.
-      const blend = 1 - Math.exp(-seconds / .1);
-      wingFold += ((isGathering ? 1 : 0) - wingFold) * blend;
+      const wingResponse = !isGliding && !isGathering && canReadFlightArms ? .035 : .1;
+      const blend = 1 - Math.exp(-seconds / wingResponse);
+      wingFold += ((isGathering ? 1 : 0) - wingFold) * (1 - Math.exp(-seconds / .1));
       leftWingBend += (left - leftWingBend) * blend;
       rightWingBend += (right - rightWingBend) * blend;
       if (Math.max(wingFold, Math.abs(leftWingBend), Math.abs(rightWingBend)) < .01) {
@@ -1648,7 +1648,7 @@
         const end = Math.round(root + (x + 1 - root) * wingScale);
         if (end > start) {
           wingContext.drawImage(wingSource, x, 0, 1, height,
-            start, -bend * curve * height * .15, end - start, height);
+            start, -bend * curve * height * .32, end - start, height);
         }
       }
       wingCanvas.hidden = false;
