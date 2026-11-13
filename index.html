@@ -1180,6 +1180,16 @@
   </main>
 
   <script>
+    // Keep the reset shortcut available even if the exhibit script fails to start.
+    window.addEventListener('keydown', (event) => {
+      if (event.code !== 'KeyR' || event.altKey || event.ctrlKey || event.metaKey ||
+          event.target.closest?.('input, select, textarea, [contenteditable]')) return;
+
+      event.preventDefault();
+      if (!event.repeat) window.location.reload();
+    }, { capture: true });
+  </script>
+  <script>
     const scene = document.querySelector('.scene');
     const camera = document.querySelector('.camera');
     const video = camera.querySelector('video');
@@ -2197,11 +2207,6 @@
       if (event.altKey || event.ctrlKey || event.metaKey ||
           event.target.closest?.('input, select, textarea, [contenteditable]')) return;
 
-      if (event.code === 'KeyR') {
-        event.preventDefault();
-        if (!event.repeat) resetExperience(performance.now());
-        return;
-      }
       if (event.code !== 'Space' || event.target.closest?.('button')) return;
 
       event.preventDefault();
@@ -2324,7 +2329,10 @@
       retry.hidden = !canRetry;
     }
 
+    let cameraStarting = false;
+
     async function startCamera() {
+      if (cameraStarting) return;
       showCameraMessage('카메라 연결 중', false);
 
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -2332,29 +2340,27 @@
         return;
       }
 
+      cameraStarting = true;
       let stream;
       let timeout;
-      let expired = false;
-      const deadline = new Promise((_, reject) => {
-        timeout = setTimeout(() => {
-          expired = true;
-          reject(new DOMException('카메라 연결 시간 초과', 'TimeoutError'));
-        }, 10000);
-      });
-
       try {
-        const openPreview = async () => {
-          const requestedStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-          if (expired) {
-            requestedStream.getTracks().forEach(track => track.stop());
-            return;
-          }
-          stream = requestedStream;
-          video.srcObject = stream;
-          await video.play();
-        };
+        const constraints = { video: true, audio: false };
+        status.textContent = '권한 안내가 뜨면 허용해 주세요.';
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (error) {
+          if (error.name !== 'NotReadableError' && error.name !== 'AbortError') throw error;
+          status.textContent = '카메라 다시 연결 중';
+          await new Promise(resolve => setTimeout(resolve, 750));
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        }
 
-        await Promise.race([openPreview(), deadline]);
+        status.textContent = '카메라 영상 준비 중';
+        video.srcObject = stream;
+        const deadline = new Promise((_, reject) => {
+          timeout = setTimeout(() => reject(new DOMException('카메라 영상 시간 초과', 'TimeoutError')), 10000);
+        });
+        await Promise.race([video.play(), deadline]);
         const track = stream.getVideoTracks()[0];
         if (track?.readyState !== 'live') throw new DOMException('카메라 연결 끊김', 'NotReadableError');
         camera.classList.add('is-live');
@@ -2373,22 +2379,25 @@
         }, { once: true });
         startPoseTracking(stream);
       } catch (error) {
+        const stage = stream ? '카메라 영상 재생' : '카메라 열기';
+        console.error(stage, error);
         stream?.getTracks().forEach(track => track.stop());
         if (video.srcObject === stream) video.srcObject = null;
 
         let message = '카메라 연결 확인';
-        if (error.name === 'NotAllowedError') {
+        if (stream) {
+          message = '카메라 영상이 나오지 않아요.';
+        } else if (error.name === 'NotAllowedError') {
           message = '카메라를 허용해 주세요.';
         } else if (error.name === 'NotFoundError') {
           message = '카메라가 없어요.';
         } else if (error.name === 'NotReadableError' || error.name === 'AbortError') {
-          message = '다른 카메라 앱을 닫아요.';
-        } else if (error.name === 'TimeoutError') {
-          message = '카메라 권한을 확인해요.';
+          message = '카메라를 열 수 없어요. 연결을 확인해 주세요.';
         }
         showCameraMessage(message, true);
       } finally {
         clearTimeout(timeout);
+        cameraStarting = false;
       }
     }
 
