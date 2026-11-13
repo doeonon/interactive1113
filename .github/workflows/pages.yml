@@ -1,0 +1,46 @@
+name: Publish exhibit variants
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          path: main
+          persist-credentials: false
+      - name: Check out redesign
+        uses: actions/checkout@v4
+        with:
+          ref: design/image-redesign
+          path: redesign
+          persist-credentials: false
+      - name: Prepare both exhibits
+        run: |
+          mkdir -p site/redesign
+          cp -R main/index.html main/camera-test.html main/assets main/image site/
+          cp -R redesign/index.html redesign/camera-test.html redesign/assets redesign/image site/redesign/
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
